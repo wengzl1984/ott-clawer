@@ -2,6 +2,7 @@ package com.webmagic.job;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -20,7 +21,15 @@ import org.springframework.scheduling.config.TriggerTask;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Component;
 
+import com.webmagic.dao.RecClawerLogMapper;
 import com.webmagic.dao.VcmClawerTaskDao;
+import com.webmagic.entity.VcmClawerTaskVo;
+import com.webmagic.pageprocess.BoardPageProcessor;
+import com.webmagic.pipeline.BoradPipeline;
+import com.webmagic.util.DateUtil;
+import com.webmagic.util.JSONUtil;
+
+import us.codecraft.webmagic.Spider;
 
 @Configurable
 @Component
@@ -37,13 +46,17 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 	private static Map<String, BaseTask> tasks = new HashMap<>();
 
 	// 定时扫描oracle的时间
-	private static final String cron = "0/30 * * * * ?"; // 调用set方法可动态设置时间规则
-	private static final String cron1 = "0/10 * * * * ?"; // 调用set方法可动态设置时间规则
+	private static final String cron = "*/10 * * * * ?"; // 调用set方法可动态设置时间规则
+	private static final String cron1 = "*/60 * * * * ?"; // 调用set方法可动态设置时间规则
+
 
 	// 状态
 	public static enum STATUS {
 		TASK_NOT_EXISTS, TASK_EXISTS, FAILURE, SUCCESS;
 	}
+	
+	//
+	private static final int[] TASKID = {1,2,3};
 
 	private final static String TASK_PREFIX = "clawer";// 爬虫榜单-任务编号
 
@@ -54,60 +67,107 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 		this.scheduledTaskRegistrar = scheduledTaskRegistrar;
 		initTask();
 	}
-
+	
 	@Autowired // 注入mapper
-	@SuppressWarnings("all")
-	VcmClawerTaskDao vcmClawerTaskDao;
-
+	private VcmClawerTaskDao vcmClawerTaskDao;
+	
+	
+    @Autowired // 注入mapper
+    private RecClawerLogMapper recClawerLogMapper;
+	
 	/**
 	 * 定时扫描oracle任务
 	 */
 	private void initTask() {
-		// TaskConfig.getTasks().forEach(task -> addTask0(task));
+
 		String taskId = TASK_PREFIX + atomicTaskId.incrementAndGet();
 		BaseTask baseCronTask = new BaseTask(taskId, cron) {
-
+		
 			@Override
 			public void run() {
 				try {
-					System.out.println(Thread.currentThread().getId() + ":" + this.getExpression());
-					changeTask(taskId, cron1);
+					log.info("定时["+cron+"] ,获取榜单爬取任务中...");
+					List<VcmClawerTaskVo> resultMap = vcmClawerTaskDao.findAll(TASKID);
+					if (resultMap == null || resultMap.size() == 0) {
+						System.out.println("未查询到相关记录..");
+						return;
+					}
+					
+					for (VcmClawerTaskVo vcmClawerTask : resultMap) {
+						
+						String taskId = String.valueOf(vcmClawerTask.getId());
+						BaseTask oldTask = TaskConfig.getTask(taskId);
+						String expression = getTaskCronExpression(vcmClawerTask.getReptileDate(), vcmClawerTask.getFrequencyNum());
+		
+						if (TaskConfig.containsTask(taskId)) {
+							// 任务时间是否有调整，有调整的话获取新的cron表达式
+							//if (oldTask.getExpression().equals(vcmClawerTask.get))
+							if (!expression.equals(oldTask.getExpression())) {
+								log.info("任务旧cron表达式[" + oldTask.getExpression() + "]新表达式["+expression+
+										"],更新任务执行频率...");
+								//TODO 更新任务
+								//changeTask(taskId, expression);
+							} else {
+								log.info("定时爬取任务URL[" + vcmClawerTask.getReptileUrl() + "],执行频率[" +expression+"],不需要更新爬取计划.");
+							}
+						} else {
+							if(new Date().compareTo(vcmClawerTask.getStartDate()) > 0) {
+								//任务开始时间小于当前系统时间，任务开始
+								log.info("获取到爬取任务，URL[" + vcmClawerTask.getReptileUrl() + "],起始时间["+DateUtil.formatDate(vcmClawerTask.getStartDate())+
+										"],执行频率[" +expression+"]");
+								
+								// TODO 任务时间随便写个
+								BaseTask clawerTask = new BaseTask(String.valueOf(vcmClawerTask.getId()), cron1) {
+
+									@Override
+									public void run() {
+									
+										Map<String, Object> ruleJson = JSONUtil.json2Map(vcmClawerTask.getRuleJson());
+										BoardPageProcessor processor = new BoardPageProcessor(ruleJson);
+										Spider.create(processor)
+				                        .addUrl(vcmClawerTask.getReptileUrl())
+				                        .addPipeline(new BoradPipeline(recClawerLogMapper))
+				                        .thread(Integer.parseInt(ruleJson.get("thread").toString()))
+				                        .run();
+									} 
+								};
+								addTask(clawerTask);
+								
+							} else {
+								//任务开始时间，
+								log.info("扫描URL[" + vcmClawerTask.getReptileUrl() + "]开始时间["+DateUtil.formatDate(vcmClawerTask.getStartDate())+
+										"],大于当前系统时间,任务未开始...");
+								return ;
+							}
+						} 	
+					}
+
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-
 			}
-
 		};
+		
 		addTask(baseCronTask);
-		
-		if (vcmClawerTaskDao == null) {
-			System.out.println("cronMapper == null");
-		}
-		Map<String, Object> resultMap = new HashMap<>();
-		String a = vcmClawerTaskDao.selectByPrimary(1);
+	
 
-		
-		// mybatis全局配置文件
-//        String resource = "SqlMapConfig.xml";
-//
-//        // 根据mybatis的全局配置文件构造 一个流
-//        InputStream inputStream;
-//		try {
-//			inputStream = Resources.getResourceAsStream(resource);
-//			
-//	        // 创建SqlSessionFactory
-//	        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
-//	        SqlSession sqlSession = sqlSessionFactory.openSession();
-//	     // 获取UserDao的代理对象
-//	        CronMapper cronMapper = sqlSession.getMapper(CronMapper.class);
-//	        Map<String, Object> cronMap = cronMapper.selectByPrimaryKey(1);
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 	}
 
+	//获取cron表达式
+	public String getTaskCronExpression(String reptileDate, int frequencyNum) {		
+		String[] dateInfo = reptileDate.split(":");
+		StringBuffer BufferCron = new StringBuffer();
+		BufferCron.append("0")
+		.append(" ")
+		.append(Integer.parseInt(dateInfo[1]))
+		.append(" ")
+		.append(Integer.parseInt(dateInfo[0]))
+		.append(" ")
+		.append("0/"+frequencyNum)
+		.append(" * ?");
+		return BufferCron.toString();
+	}
+	
 	/**
 	 * 添加任务
 	 * 

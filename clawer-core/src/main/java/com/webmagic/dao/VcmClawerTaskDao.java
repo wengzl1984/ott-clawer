@@ -1,12 +1,13 @@
 package com.webmagic.dao;
 
-import java.util.Map;
+import java.util.List;
 
-import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Repository;
+
+import com.webmagic.entity.VcmClawerTaskVo;
 
 
 @Repository
 public interface VcmClawerTaskDao {
-	String selectByPrimary(int id);
+	List<VcmClawerTaskVo> findAll(int[] taskId);
 }
