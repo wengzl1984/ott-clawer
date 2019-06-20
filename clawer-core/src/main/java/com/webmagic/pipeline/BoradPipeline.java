@@ -1,7 +1,6 @@
 package com.webmagic.pipeline;
 
 import java.sql.Date;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +33,9 @@ public class BoradPipeline implements Pipeline {
 		//int 
 		Map<String, List<String>> data = resultItems.get("data");
 		List<String> videoName = data.get(BoardPageProcessor.videoName);//资源名称
-		List<String> videoRanking = data.get(BoardPageProcessor.videoRanking);//排名
+		List<String> videoRanking = data.get(BoardPageProcessor.videoRank);//排名
 		List<String> videoRate = data.get(BoardPageProcessor.videoRate);//评分/指数
-		List<String> videoReleaseDates = data.get(BoardPageProcessor.videoReleaseDates);//上映时间
+		List<String> videoReleaseDates = data.get(BoardPageProcessor.videoReleaseDate);//上映时间
 		List<String> videoCast = data.get(BoardPageProcessor.videoCast);//主演
 		List<String> videoBoxOffice = data.get(BoardPageProcessor.videoBoxOffice);//票房
 		List<String> contentType = data.get(BoardPageProcessor.contentType);//票房
@@ -58,13 +57,13 @@ public class BoradPipeline implements Pipeline {
 				responeContent.put(BoardPageProcessor.videoName, videoName.get(index));
 			}
 			if (videoRanking != null) {
-				responeContent.put(BoardPageProcessor.videoRanking, videoRanking.get(index));
+				responeContent.put(BoardPageProcessor.videoRank, videoRanking.get(index));
 			}
 			if (videoRate != null) {
 				responeContent.put(BoardPageProcessor.videoRate, videoRate.get(index));
 			}
 			if (videoReleaseDates != null) {
-				responeContent.put(BoardPageProcessor.videoReleaseDates, videoReleaseDates.get(index));
+				responeContent.put(BoardPageProcessor.videoReleaseDate, videoReleaseDates.get(index));
 			}
 			if (videoCast != null) {
 				responeContent.put(BoardPageProcessor.videoCast, videoCast.get(index));
@@ -81,10 +80,7 @@ public class BoradPipeline implements Pipeline {
 			//vcmList.add(vcmLog);
 			recClawerLogMapper.insertRecord(vcmLog);
 		}
-
 		//recClawerLogMapper.insertRecdBatch(vcmList);
-
-		
 	}
 
 }

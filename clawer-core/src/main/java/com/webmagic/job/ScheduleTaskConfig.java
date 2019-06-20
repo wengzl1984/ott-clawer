@@ -1,10 +1,8 @@
 package com.webmagic.job;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,28 +36,22 @@ import us.codecraft.webmagic.Spider;
 public class ScheduleTaskConfig implements SchedulingConfigurer {
 
 	private Logger log = LoggerFactory.getLogger(ScheduleTaskConfig.class);
-
-	// 任务编号
-	private AtomicInteger atomicTaskId = new AtomicInteger(0);
-
-	// 任务缓存
-	private static Map<String, BaseTask> tasks = new HashMap<>();
-
+	
 	// 定时扫描oracle的时间
-	private static final String cron = "*/10 * * * * ?"; // 调用set方法可动态设置时间规则
-	private static final String cron1 = "*/60 * * * * ?"; // 调用set方法可动态设置时间规则
-
+	private static final String tasksScanCron = "0 0 */1 * * ?"; // 一个小时执行一次
+	private static final String firstExecCron = "0/10 * * * * ?"; // 10秒执行一次后调整为一个小时执行
 
 	// 状态
 	public static enum STATUS {
 		TASK_NOT_EXISTS, TASK_EXISTS, FAILURE, SUCCESS;
 	}
 	
-	//
+	// 榜单任务范围
 	private static final int[] TASKID = {1,2,3};
 
-	private final static String TASK_PREFIX = "clawer";// 爬虫榜单-任务编号
-
+	// 爬虫榜单-任务编号
+	private final static String TASK_PREFIX = "ClawerTaskScan";
+	private boolean firstExec = true;
 	private ScheduledTaskRegistrar scheduledTaskRegistrar;
 
 	@Override
@@ -80,48 +72,46 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 	 */
 	private void initTask() {
 
-		String taskId = TASK_PREFIX + atomicTaskId.incrementAndGet();
-		BaseTask baseCronTask = new BaseTask(taskId, cron) {
+		String baseTaskId = TASK_PREFIX ;
+	
+		BaseTask baseCronTask = new BaseTask(baseTaskId, firstExecCron) {
 		
 			@Override
 			public void run() {
 				try {
-					log.info("定时["+cron+"] ,获取榜单爬取任务中...");
+
+					log.info("当前榜单爬取任务列表如下：");					
+					TaskConfig.getTasks().stream().forEach((BaseTask printBask)-> log.info(printBask.toString()));
 					List<VcmClawerTaskVo> resultMap = vcmClawerTaskDao.findAll(TASKID);
 					if (resultMap == null || resultMap.size() == 0) {
-						System.out.println("未查询到相关记录..");
+						log.info("未查询到相关记录..");
 						return;
 					}
+
 					
 					for (VcmClawerTaskVo vcmClawerTask : resultMap) {
-						
 						String taskId = String.valueOf(vcmClawerTask.getId());
 						BaseTask oldTask = TaskConfig.getTask(taskId);
 						String expression = getTaskCronExpression(vcmClawerTask.getReptileDate(), vcmClawerTask.getFrequencyNum());
-		
 						if (TaskConfig.containsTask(taskId)) {
 							// 任务时间是否有调整，有调整的话获取新的cron表达式
-							//if (oldTask.getExpression().equals(vcmClawerTask.get))
 							if (!expression.equals(oldTask.getExpression())) {
 								log.info("任务旧cron表达式[" + oldTask.getExpression() + "]新表达式["+expression+
 										"],更新任务执行频率...");
-								//TODO 更新任务
-								//changeTask(taskId, expression);
-							} else {
-								log.info("定时爬取任务URL[" + vcmClawerTask.getReptileUrl() + "],执行频率[" +expression+"],不需要更新爬取计划.");
-							}
+								changeTask(taskId, expression);
+							} 
+							
 						} else {
 							if(new Date().compareTo(vcmClawerTask.getStartDate()) > 0) {
 								//任务开始时间小于当前系统时间，任务开始
-								log.info("获取到爬取任务，URL[" + vcmClawerTask.getReptileUrl() + "],起始时间["+DateUtil.formatDate(vcmClawerTask.getStartDate())+
+								log.info("启动爬取任务，URL[" + vcmClawerTask.getReptileUrl() + "],起始时间["+DateUtil.formatDate(vcmClawerTask.getStartDate())+
 										"],执行频率[" +expression+"]");
 								
 								// TODO 任务时间随便写个
-								BaseTask clawerTask = new BaseTask(String.valueOf(vcmClawerTask.getId()), cron1) {
+								BaseTask clawerTask = new BaseTask(String.valueOf(vcmClawerTask.getId()), expression) {
 
 									@Override
 									public void run() {
-									
 										Map<String, Object> ruleJson = JSONUtil.json2Map(vcmClawerTask.getRuleJson());
 										BoardPageProcessor processor = new BoardPageProcessor(ruleJson);
 										Spider.create(processor)
@@ -141,7 +131,12 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 							}
 						} 	
 					}
-
+					
+					//首次获取任务后将执行周期调整为每个小时一次
+					if (firstExec) {
+						changeTask(baseTaskId, tasksScanCron);
+						firstExec = false;
+					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -149,8 +144,6 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 		};
 		
 		addTask(baseCronTask);
-	
-
 	}
 
 	//获取cron表达式
@@ -238,13 +231,14 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 	 * 添加可变时间task
 	 * 
 	 * @param task
+	 * @param 是否立即启动
 	 * @return
 	 */
 	private ScheduledTask addTriggerTask(BaseTask task) {
 		return scheduledTaskRegistrar.scheduleTriggerTask(new TriggerTask(task, triggerContext -> {
 			CronTrigger trigger = new CronTrigger(task.getExpression());
-			Date nextExec = trigger.nextExecutionTime(triggerContext);
-			return nextExec;
+		    return trigger.nextExecutionTime(triggerContext);
+
 		}));
 	}
 
@@ -254,6 +248,8 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 	 * @param task
 	 * @param interval
 	 */
+
+	@SuppressWarnings({ "deprecation", "unused" })
 	private ScheduledTask addFixedRateTask(Runnable task, long interval) {
 		return scheduledTaskRegistrar.scheduleFixedRateTask(new IntervalTask(task, interval, 0L));
 	}
@@ -265,6 +261,7 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 	 * @param interval
 	 * @param delay
 	 */
+	@SuppressWarnings({ "deprecation", "unused" })
 	private ScheduledTask addFixedDelayTask(Runnable task, long interval, long delay) {
 		return scheduledTaskRegistrar.scheduleFixedDelayTask(new IntervalTask(task, interval, delay));
 	}
@@ -274,6 +271,7 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 	 * 
 	 * @param task
 	 */
+	@SuppressWarnings("unused")
 	private ScheduledTask addCronTask(Runnable task, String expression) {
 		return scheduledTaskRegistrar.scheduleCronTask(new CronTask(task, expression));
 	}

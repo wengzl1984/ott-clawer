@@ -30,9 +30,9 @@ public class BoardPageProcessor implements PageProcessor {
 	public static final String videoBoxOffice= "videoBoxOffice";//票房(万元)
 	public static final String videoName = "videoName";//资源名称
 	public static final String contentType = "contentType";//资源类别(1.电影,2.电视剧)
-	public static final String videoRanking = "videoRanking";//排名
+	public static final String videoRank = "videoRank";//排名
 	public static final String videoRate = "videoRate";//评分/指数
-	public static final String videoReleaseDates = "videoReleaseDates";//上映时间
+	public static final String videoReleaseDate = "videoReleaseDate";//上映时间
 	public static final String videoCast = "videoCast";//主演
 	
 	public static final int  MAOYAN_ID = 3;
@@ -60,11 +60,11 @@ public class BoardPageProcessor implements PageProcessor {
 
 	@Override
 	public void process(Page page) {
-		if (page.getUrl().regex(MAOYAN_URL).match() || page.getUrl().toString().startsWith(CBOOO_MOVIE_URL)) {
+		if (page.getUrl().toString().equals(MAOYAN_URL)|| page.getUrl().toString().startsWith(CBOOO_MOVIE_URL)) {
 			getMaoyanHot(page);
-		} else if (page.getUrl().regex(BAIDU_TV_URL).match()) {
+		} else if (page.getUrl().toString().equals(BAIDU_TV_URL)) {
 			getBaiduHot(page, BAIDU_TV_ID);
-		} else if (page.getUrl().regex(BAIDU_MOVIE_URL).match()) {
+		} else if (page.getUrl().toString().equals(BAIDU_MOVIE_URL)) {
 			getBaiduHot(page, BAIDU_MOVIE_ID);
 		} else {
 			System.out.println("url["+page.getUrl()+"]，不处理..");
@@ -76,48 +76,19 @@ public class BoardPageProcessor implements PageProcessor {
 		return site;
 	}
 
-//	public void getBaiduMoive(Page page) {
-//		
-//		log.info("百度电影榜单，url=" + page.getUrl());
-//		// 得到排名
-//		List<String> videoRankiList = page.getHtml()
-//				.xpath("//*[@id=\"main\"]/div[2]/div/table/tbody/*/td[1]/span/text()").all();
-//		// 得到搜索指
-//		List<String> videoRateList = page.getHtml()
-//				.xpath("//*[@id=\"main\"]/div[2]/div/table/tbody/*/td[4]/span/text()").all();
-//		// 得到媒资名称
-//		List<String> videoNameList = page.getHtml()
-//				.xpath("//*[@id=\"main\"]/div[2]/div/table/tbody/*/td[2]/a[1]/text()").all();
-//		
-//		Map<String, Object> data = new HashMap<>();
-//		data.put(videoRanking, videoRankiList);//排名
-//		data.put(videoRate, videoRateList);//搜索指数
-//		data.put(videoName, videoNameList);//媒资名称
-//
-//		page.putField("data", data);
-//		page.putField("ID", 1);
-//		page.putField("STATUS", 0);
-//		page.putField("EXEC_DATE", DateUtil.getCurrDate());
-//		log.info("videoRankiList=" + videoRankiList);
-//		log.info("videoRateList=" + videoRateList);
-//		log.info("videoNameList=" + videoNameList);
-//	} 
 
+	
 	public void getBaiduHot(Page page, int id) {
-		// 得到排名
-		log.info("百度电视榜单，url=" + page.getUrl());
 
-		List<String> videoRankiList = page.getHtml()
-				.xpath("//*[@id=\"main\"]/div[2]/div/table/tbody/*/td[1]/span/text()").all();
+		log.info("百度风云榜，url=" + page.getUrl());
+		// 得到排名
+		List<String> videoRankiList = page.getHtml().xpath(getXpath(videoRank).toString()).all();
 		// 得到搜索指
-		List<String> videoRateList = page.getHtml()
-				.xpath("//*[@id=\"main\"]/div[2]/div/table/tbody/*/td[4]/span/text()").all();
+		List<String> videoRateList = page.getHtml().xpath(getXpath(videoRate)).all();
 		// 得到媒资名称
-		List<String> videoNameList = page.getHtml()
-				.xpath("//*[@id=\"main\"]/div[2]/div/table/tbody/*/td[2]/a[1]/text()").all();
-		
+		List<String> videoNameList = page.getHtml().xpath(getXpath(videoName)).all();
 		Map<String, Object> data = new HashMap<>();
-		data.put(videoRanking, videoRankiList);//排名
+		data.put(videoRank, videoRankiList);//排名
 		data.put(videoRate, videoRateList);//搜索指数
 		data.put(videoName, videoNameList);//媒资名称
 		page.putField("data", data);
@@ -135,31 +106,31 @@ public class BoardPageProcessor implements PageProcessor {
 			data.clear();
 			log.info("猫眼热映电影榜单，url=" + page.getUrl());
 			// 排名
-			List<String> videoRankiListTmp = page.getHtml().xpath("//*[@id=\"app\"]/div/div/div/dl/*/i/text()").all();
+			List<String> videoRankiListTmp = page.getHtml().xpath(getXpath(videoRank)).all();
 			
 			// 电影名称
 			List<String> videoNameList = page.getHtml()
-					.xpath("//*[@id=\"app\"]/div/div/div/dl/*/div/div/div[1]/p[1]/a/text()").all();
+					.xpath(getXpath(videoName)).all();
 
 			// 上映时间
 			List<String> videoReleaseListtmp = page.getHtml()
-					.xpath("//*[@id=\"app\"]/div/div/div/dl/*/div/div/div[1]/p[3]/text()").all();
+					.xpath(getXpath(videoReleaseDate)).all();
 			List<String> videoReleaseList = new ArrayList<String>();
 			videoReleaseListtmp.stream().forEach(release->videoReleaseList.add(release.replace("上映时间：", "")));
 
 			
 			// 主演名单
 			List<String> videoCastListtmp = page.getHtml()
-					.xpath("//*[@id=\"app\"]/div/div/div/dl/*/div/div/div[1]/p[2]/text()").all();
+					.xpath(getXpath(videoCast)).all();
 			List<String> videoCastList = new ArrayList<String>();
 			videoCastListtmp.forEach(cast->videoCastList.add(cast.replaceAll(" 主演：", "")));
 
 			
 			// 评分分前后
 			List<String> videoRateStartList = page.getHtml()
-					.xpath("//*[@id=\"app\"]/div/div/div/dl/*/div/div/div[2]/p/i[1]/text()").all();
+					.xpath(getXpath("videoRateStart")).all();
 			List<String> videoRateEndList = page.getHtml()
-					.xpath("//*[@id=\"app\"]/div/div/div/dl/*/div/div/div[2]/p/i[2]/text()").all();
+					.xpath(getXpath("videoRateEnd")).all();
 			List<String> videoRateList = new ArrayList<>();
 			if (videoRateStartList != null && videoRateEndList != null) {
 				for (int i = 0; i < videoReleaseList.size(); i++) {
@@ -169,14 +140,15 @@ public class BoardPageProcessor implements PageProcessor {
 
 			// 票房
 			targetUrlCnt.set(videoNameList.size());
-			videoNameList.stream().forEach((String movieName)->{ page.addTargetRequest("http://www.cbooo.cn/search?k="+movieName);});
+			String cboooPrefix = ruleJson.get("cboooPrefix").toString();
+			videoNameList.stream().forEach((String movieName)->{ page.addTargetRequest(cboooPrefix + movieName);});
 
 			//缓存数据
 			data.put(videoName, videoNameList);//资源名称
 			data.put(contentType,Collections.nCopies(videoNameList.size(), "1"));//资源类别(1.电影,2.电视剧)
-			data.put(videoRanking, videoRankiListTmp);//排名
+			data.put(videoRank, videoRankiListTmp);//排名
 			data.put(videoRate, videoRateList);//评分/指数
-			data.put(videoReleaseDates, videoReleaseList);//上映时间
+			data.put(videoReleaseDate, videoReleaseList);//上映时间
 			data.put(videoCast, videoCastList);//主演
 
 			log.info("资源名称=" + videoNameList);
@@ -189,7 +161,7 @@ public class BoardPageProcessor implements PageProcessor {
 		} else {
 
 			log.info("中国票房网，url=" + page.getUrl() + ",a=" + data.size());
-			List<String> pf =page.getHtml().xpath("//*[@id=\"top\"]/div[3]/div[2]/div[2]/ul[1]/li/span/text()").all();
+			List<String> pf =page.getHtml().xpath(getXpath(videoBoxOffice)).all();
 			pf.stream().forEach((String info) -> {
 				if (info.indexOf(DateUtil.getCurrYear()) != -1 && info.indexOf("万") != -1) {
 					String[] infos=info.split("  ");
@@ -210,6 +182,10 @@ public class BoardPageProcessor implements PageProcessor {
 		
 	}
 
+	
+	public String getXpath(String attr) {
+		return ruleJson.get(attr + "XPath").toString();
+	}
 	
 	public Map<String, Object> getRuleJson() {
 		return ruleJson;

@@ -10,9 +10,15 @@ import org.springframework.scheduling.config.ScheduledTask;
  * 基本的任务配置类
  */
 public abstract class BaseTask implements Runnable,InitializingBean {
-    protected final Logger log = LoggerFactory.getLogger(this.getClass());
+
+	protected final Logger log = LoggerFactory.getLogger(this.getClass());
     private ScheduledTask scheduledTask;
-    private final String id;
+    @Override
+	public String toString() {
+		return "BaseTask [id=" + id + ", expression=" + expression + "]";
+	}
+
+	private final String id;
 	private String  expression;
 
     public BaseTask(String taskId, String expression) {
@@ -71,6 +77,4 @@ public abstract class BaseTask implements Runnable,InitializingBean {
     public void afterPropertiesSet() {
         TaskConfig.addTask(this);
     }
-
-
 }
