@@ -79,15 +79,11 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 			@Override
 			public void run() {
 				try {
-
-					log.info("当前榜单爬取任务列表如下：");					
-					TaskConfig.getTasks().stream().forEach((BaseTask printBask)-> log.info(printBask.toString()));
 					List<VcmClawerTaskVo> resultMap = vcmClawerTaskDao.findAll(TASKID);
 					if (resultMap == null || resultMap.size() == 0) {
 						log.info("未查询到相关记录..");
 						return;
 					}
-
 					
 					for (VcmClawerTaskVo vcmClawerTask : resultMap) {
 						String taskId = String.valueOf(vcmClawerTask.getId());
@@ -107,9 +103,7 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 								log.info("启动爬取任务，URL[" + vcmClawerTask.getReptileUrl() + "],起始时间["+DateUtil.formatDate(vcmClawerTask.getStartDate())+
 										"],执行频率[" +expression+"]");
 								
-								// TODO 任务时间随便写个
 								BaseTask clawerTask = new BaseTask(String.valueOf(vcmClawerTask.getId()), expression) {
-
 									@Override
 									public void run() {
 										Map<String, Object> ruleJson = JSONUtil.json2Map(vcmClawerTask.getRuleJson());
@@ -125,8 +119,7 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 								
 							} else {
 								//任务开始时间，
-								log.info("扫描URL[" + vcmClawerTask.getReptileUrl() + "]开始时间["+DateUtil.formatDate(vcmClawerTask.getStartDate())+
-										"],大于当前系统时间,任务未开始...");
+								log.info("扫描URL[" + vcmClawerTask.getReptileUrl() + "]开始时间["+DateUtil.formatDate(vcmClawerTask.getStartDate())+"],大于当前系统时间,任务暂不开始...");
 								return ;
 							}
 						} 	
@@ -137,6 +130,9 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 						changeTask(baseTaskId, tasksScanCron);
 						firstExec = false;
 					}
+					
+					log.info("当前榜单爬取任务列表如下：");					
+					TaskConfig.getTasks().stream().forEach((BaseTask printBask)-> log.info(printBask.toString()));
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -156,7 +152,7 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 		.append(" ")
 		.append(Integer.parseInt(dateInfo[0]))
 		.append(" ")
-		.append("0/"+frequencyNum)
+		.append("*/"+frequencyNum)
 		.append(" * ?");
 		return BufferCron.toString();
 	}
