@@ -30,9 +30,9 @@ public class BoardPageProcessor implements PageProcessor {
 	public static final String videoBoxOffice= "videoBoxOffice";//票房(万元)
 	public static final String videoName = "videoName";//资源名称
 	public static final String contentType = "contentType";//资源类别(1.电影,2.电视剧)
-	public static final String videoRank = "videoRank";//排名
+	public static final String videoRanking = "videoRanking";//排名
 	public static final String videoRate = "videoRate";//评分/指数
-	public static final String videoReleaseDate = "videoReleaseDate";//上映时间
+	public static final String videoReleaseDates = "videoReleaseDates";//上映时间
 	public static final String videoCast = "videoCast";//主演
 	
 	public static final int  MAOYAN_ID = 3;
@@ -82,15 +82,16 @@ public class BoardPageProcessor implements PageProcessor {
 
 		log.info("百度风云榜，url=" + page.getUrl());
 		// 得到排名
-		List<String> videoRankiList = page.getHtml().xpath(getXpath(videoRank).toString()).all();
+		List<String> videoRankiList = page.getHtml().xpath(getXpath(videoRanking).toString()).all();
 		// 得到搜索指
 		List<String> videoRateList = page.getHtml().xpath(getXpath(videoRate)).all();
 		// 得到媒资名称
 		List<String> videoNameList = page.getHtml().xpath(getXpath(videoName)).all();
 		Map<String, Object> data = new HashMap<>();
-		data.put(videoRank, videoRankiList);//排名
+		data.put(videoRanking, videoRankiList);//排名
 		data.put(videoRate, videoRateList);//搜索指数
 		data.put(videoName, videoNameList);//媒资名称
+		data.put(contentType,Collections.nCopies(videoNameList.size(), id+""));//资源类别(1.电影,2.电视剧)
 		page.putField("data", data);
 		page.putField("ID", id);
 		log.info("videoRankiList=" + videoRankiList);
@@ -106,7 +107,7 @@ public class BoardPageProcessor implements PageProcessor {
 			data.clear();
 			log.info("猫眼热映电影榜单，url=" + page.getUrl());
 			// 排名
-			List<String> videoRankiListTmp = page.getHtml().xpath(getXpath(videoRank)).all();
+			List<String> videoRankiListTmp = page.getHtml().xpath(getXpath(videoRanking)).all();
 			
 			// 电影名称
 			List<String> videoNameList = page.getHtml()
@@ -114,23 +115,20 @@ public class BoardPageProcessor implements PageProcessor {
 
 			// 上映时间
 			List<String> videoReleaseListtmp = page.getHtml()
-					.xpath(getXpath(videoReleaseDate)).all();
+					.xpath(getXpath(videoReleaseDates)).all();
 			List<String> videoReleaseList = new ArrayList<String>();
 			videoReleaseListtmp.stream().forEach(release->videoReleaseList.add(release.replace("上映时间：", "")));
 
 			
 			// 主演名单
-			List<String> videoCastListtmp = page.getHtml()
-					.xpath(getXpath(videoCast)).all();
+			List<String> videoCastListtmp = page.getHtml().xpath(getXpath(videoCast)).all();
 			List<String> videoCastList = new ArrayList<String>();
 			videoCastListtmp.forEach(cast->videoCastList.add(cast.replaceAll(" 主演：", "")));
 
 			
 			// 评分分前后
-			List<String> videoRateStartList = page.getHtml()
-					.xpath(getXpath("videoRateStart")).all();
-			List<String> videoRateEndList = page.getHtml()
-					.xpath(getXpath("videoRateEnd")).all();
+			List<String> videoRateStartList = page.getHtml().xpath(getXpath("videoRateStart")).all();
+			List<String> videoRateEndList = page.getHtml().xpath(getXpath("videoRateEnd")).all();
 			List<String> videoRateList = new ArrayList<>();
 			if (videoRateStartList != null && videoRateEndList != null) {
 				for (int i = 0; i < videoReleaseList.size(); i++) {
@@ -146,9 +144,9 @@ public class BoardPageProcessor implements PageProcessor {
 			//缓存数据
 			data.put(videoName, videoNameList);//资源名称
 			data.put(contentType,Collections.nCopies(videoNameList.size(), "1"));//资源类别(1.电影,2.电视剧)
-			data.put(videoRank, videoRankiListTmp);//排名
+			data.put(videoRanking, videoRankiListTmp);//排名
 			data.put(videoRate, videoRateList);//评分/指数
-			data.put(videoReleaseDate, videoReleaseList);//上映时间
+			data.put(videoReleaseDates, videoReleaseList);//上映时间
 			data.put(videoCast, videoCastList);//主演
 
 			log.info("资源名称=" + videoNameList);
@@ -170,7 +168,7 @@ public class BoardPageProcessor implements PageProcessor {
 					if (boxs == null) {
 						boxs = new ArrayList<String>();
 					} 
-					boxs.add(infos[infos.length-1]);
+					boxs.add(infos[infos.length-1].replace("万", ""));
 					data.put(videoBoxOffice, boxs);
 					if(targetUrlCnt.decrementAndGet() == 0) {
 						page.putField("data", data);

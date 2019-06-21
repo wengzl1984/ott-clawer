@@ -33,9 +33,9 @@ public class BoradPipeline implements Pipeline {
 		//int 
 		Map<String, List<String>> data = resultItems.get("data");
 		List<String> videoName = data.get(BoardPageProcessor.videoName);//资源名称
-		List<String> videoRanking = data.get(BoardPageProcessor.videoRank);//排名
+		List<String> videoRanking = data.get(BoardPageProcessor.videoRanking);//排名
 		List<String> videoRate = data.get(BoardPageProcessor.videoRate);//评分/指数
-		List<String> videoReleaseDates = data.get(BoardPageProcessor.videoReleaseDate);//上映时间
+		List<String> videoReleaseDates = data.get(BoardPageProcessor.videoReleaseDates);//上映时间
 		List<String> videoCast = data.get(BoardPageProcessor.videoCast);//主演
 		List<String> videoBoxOffice = data.get(BoardPageProcessor.videoBoxOffice);//票房
 		List<String> contentType = data.get(BoardPageProcessor.contentType);//票房
@@ -56,20 +56,23 @@ public class BoradPipeline implements Pipeline {
 			if (videoName != null) {//资源名称
 				responeContent.put(BoardPageProcessor.videoName, videoName.get(index));
 			}
-			if (videoRanking != null) {
-				responeContent.put(BoardPageProcessor.videoRank, videoRanking.get(index));
+			if (videoRanking != null) {//排名
+				responeContent.put(BoardPageProcessor.videoRanking, Integer.parseInt(videoRanking.get(index)));
 			}
-			if (videoRate != null) {
-				responeContent.put(BoardPageProcessor.videoRate, videoRate.get(index));
+			if (videoRate != null) {//评分/指数
+				responeContent.put(BoardPageProcessor.videoRate, Double.parseDouble(videoRate.get(index)));
 			}
-			if (videoReleaseDates != null) {
-				responeContent.put(BoardPageProcessor.videoReleaseDate, videoReleaseDates.get(index));
+			if (videoReleaseDates != null) {//上映时间
+				responeContent.put(BoardPageProcessor.videoReleaseDates, videoReleaseDates.get(index));
 			}
-			if (videoCast != null) {
+			if (videoCast != null) {//主演
 				responeContent.put(BoardPageProcessor.videoCast, videoCast.get(index));
 			}
-			if (videoBoxOffice != null) {
-				responeContent.put(BoardPageProcessor.videoBoxOffice, videoBoxOffice.get(index));
+			if (videoBoxOffice != null) {//票房万
+				responeContent.put(BoardPageProcessor.videoBoxOffice, Integer.parseInt(videoBoxOffice.get(index)));
+			}
+			if (contentType != null) {//类型
+				responeContent.put(BoardPageProcessor.contentType, Integer.parseInt(contentType.get(index)));
 			}
 
 			//入库
