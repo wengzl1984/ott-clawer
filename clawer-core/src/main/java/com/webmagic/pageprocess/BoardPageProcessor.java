@@ -67,7 +67,7 @@ public class BoardPageProcessor implements PageProcessor {
 		} else if (page.getUrl().toString().equals(BAIDU_MOVIE_URL)) {
 			getBaiduHot(page, BAIDU_MOVIE_ID);
 		} else {
-			System.out.println("url["+page.getUrl()+"]，不处理..");
+			log.info("url["+page.getUrl()+"]，不处理..");
 		}
 	}
 
@@ -110,12 +110,10 @@ public class BoardPageProcessor implements PageProcessor {
 			List<String> videoRankiListTmp = page.getHtml().xpath(getXpath(videoRanking)).all();
 			
 			// 电影名称
-			List<String> videoNameList = page.getHtml()
-					.xpath(getXpath(videoName)).all();
+			List<String> videoNameList = page.getHtml().xpath(getXpath(videoName)).all();
 
 			// 上映时间
-			List<String> videoReleaseListtmp = page.getHtml()
-					.xpath(getXpath(videoReleaseDates)).all();
+			List<String> videoReleaseListtmp = page.getHtml().xpath(getXpath(videoReleaseDates)).all();
 			List<String> videoReleaseList = new ArrayList<String>();
 			videoReleaseListtmp.stream().forEach(release->videoReleaseList.add(release.replace("上映时间：", "")));
 

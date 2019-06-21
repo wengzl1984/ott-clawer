@@ -134,7 +134,8 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
 					log.info("当前榜单爬取任务列表如下：");					
 					TaskConfig.getTasks().stream().forEach((BaseTask printBask)-> log.info(printBask.toString()));
 				} catch (Exception e) {
-					e.printStackTrace();
+					log.error("爬取榜单任务失败:",e);
+					throw e;
 				}
 			}
 		};
