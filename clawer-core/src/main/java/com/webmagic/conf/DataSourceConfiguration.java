@@ -1,14 +1,17 @@
 package com.webmagic.conf;
 
-import javax.sql.DataSource;
-
+import com.alibaba.druid.pool.DruidDataSource;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.mybatis.spring.SqlSessionFactoryBean;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import com.alibaba.druid.pool.DruidDataSource;
+import javax.sql.DataSource;
 
 /**
  * @author ljs
@@ -20,12 +23,12 @@ import com.alibaba.druid.pool.DruidDataSource;
  */
 
 @Configuration
-//@MapperScan(basePackages = "com.webmagic.dao")
+@MapperScan(basePackages = "com.webmagic.dao")
 public class DataSourceConfiguration {
     @Autowired
     private Environment env;
     @Bean
-    @ConfigurationProperties(prefix = "spring.datasource")
+    @ConfigurationProperties(prefix = "spring.druid")
     public DataSource readDataSource() {
         return new DruidDataSource();
     }

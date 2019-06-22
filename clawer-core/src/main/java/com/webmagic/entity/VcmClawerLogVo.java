@@ -7,7 +7,7 @@ public class VcmClawerLogVo implements Serializable {
 	private static final long serialVersionUID = 2L;
 	private String responeContext;
 	private Date execDate;
-	private int id;
+	private long id;
 	private int status;
 	private String infoDesc;
 	private int errorType;
@@ -21,10 +21,10 @@ public class VcmClawerLogVo implements Serializable {
 	public void setResponeContext(String responeContext) {
 		this.responeContext = responeContext;
 	}
-	public int getId() {
+	public long getId() {
 		return id;
 	}
-	public void setId(int id) {
+	public void setId(long id) {
 		this.id = id;
 	}
 	public int getStatus() {

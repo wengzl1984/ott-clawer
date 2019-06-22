@@ -35,7 +35,7 @@ public abstract class TaskConfig {
      * @param taskId
      * @return
      */
-    static boolean containsTask(String taskId) {
+    public static boolean containsTask(String taskId) {
         return tasks.containsKey(taskId);
     }
 
@@ -44,11 +44,11 @@ public abstract class TaskConfig {
      * @param taskId
      * @return
      */
-    static BaseTask getTask(String taskId) {
+    public static BaseTask getTask(String taskId) {
         return tasks.get(taskId);
     }
 
-    static BaseTask removeTask(String taskId) {
+    public static BaseTask removeTask(String taskId) {
         return tasks.remove(taskId);
     }
 }

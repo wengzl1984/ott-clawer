@@ -11,7 +11,7 @@ public class VcmClawerTaskVo implements Serializable {
 	private int source;
 	private int reptileContent;
 	private String reptileUrl;
-	private int maxPreNum;
+	private int maxPerNum;
 	private int frequencyNum;
 	private String reptileDate;
 	private Date startDate;
@@ -28,7 +28,7 @@ public class VcmClawerTaskVo implements Serializable {
 	@Override
 	public String toString() {
 		return "VcmClawerTaskVo [id=" + id + ", taskName=" + taskName + ", source=" + source + ", reptileContent="
-				+ reptileContent + ", reptileUrl=" + reptileUrl + ", maxPreNum=" + maxPreNum + ", frequencyNum="
+				+ reptileContent + ", reptileUrl=" + reptileUrl + ", maxPerNum=" + maxPerNum + ", frequencyNum="
 				+ frequencyNum + ", reptileDate=" + reptileDate + ", startDate=" + startDate + ", status=" + status
 				+ ", createUser=" + createUser + ", createDate=" + createDate + ", updateUser=" + updateUser
 				+ ", updateDate=" + updateDate + ", delFlag=" + delFlag + ", ruleJson=" + ruleJson + ", infoDesc="
@@ -76,12 +76,12 @@ public class VcmClawerTaskVo implements Serializable {
 		this.reptileUrl = reptileUrl;
 	}
 
-	public int getMaxPreNum() {
-		return maxPreNum;
+	public int getMaxPerNum() {
+		return maxPerNum;
 	}
 
-	public void setMaxPreNum(int maxPreNum) {
-		this.maxPreNum = maxPreNum;
+	public void setMaxPerNum(int maxPerNum) {
+		this.maxPerNum = maxPerNum;
 	}
 
 	public int getFrequencyNum() {

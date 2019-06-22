@@ -1,9 +1,15 @@
 package com.webmagic.job;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.alibaba.fastjson.JSON;
+import com.webmagic.pageprocess.VideoMatchProcessor;
+import com.webmagic.pipeline.VcmClawerPipeline;
+import com.webmagic.util.PhantomJsDriver;
+import com.webmagic.util.UserAgentUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +33,8 @@ import com.webmagic.pipeline.BoradPipeline;
 import com.webmagic.util.DateUtil;
 import com.webmagic.util.JSONUtil;
 
+import us.codecraft.webmagic.Request;
+import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 
 @Configurable
@@ -35,242 +43,297 @@ import us.codecraft.webmagic.Spider;
 @Order(10000)
 public class ScheduleTaskConfig implements SchedulingConfigurer {
 
-	private Logger log = LoggerFactory.getLogger(ScheduleTaskConfig.class);
-	
-	// 定时扫描oracle的时间
-	private static final String tasksScanCron = "0 0 */1 * * ?"; // 一个小时执行一次
-	private static final String firstExecCron = "0/10 * * * * ?"; // 10秒执行一次后调整为一个小时执行
+    private Logger log = LoggerFactory.getLogger(ScheduleTaskConfig.class);
 
-	// 状态
-	public static enum STATUS {
-		TASK_NOT_EXISTS, TASK_EXISTS, FAILURE, SUCCESS;
-	}
-	
-	// 榜单任务范围
-	private static final int[] TASKID = {1,2,3};
+    // 定时扫描oracle的时间
+    private static final String tasksScanCron = "0 0 */1 * * ?"; // 一个小时执行一次
+    private static final String firstExecCron = "0/10 * * * * ?"; // 10秒执行一次后调整为一个小时执行
 
-	// 爬虫榜单-任务编号
-	private final static String TASK_PREFIX = "ClawerTaskScan";
-	private boolean firstExec = true;
-	private ScheduledTaskRegistrar scheduledTaskRegistrar;
+    // 状态
+    public static enum STATUS {
+        TASK_NOT_EXISTS, TASK_EXISTS, FAILURE, SUCCESS;
+    }
 
-	@Override
-	public void configureTasks(ScheduledTaskRegistrar scheduledTaskRegistrar) {
-		this.scheduledTaskRegistrar = scheduledTaskRegistrar;
-		initTask();
-	}
-	
-	@Autowired // 注入mapper
-	private VcmClawerTaskDao vcmClawerTaskDao;
-	
-	
+    // 榜单任务范围
+    private static final int[] TASKID = {1, 2, 3, 4, 5};
+//    private static final int[] TASKID = { 4};
+
+    // 爬虫榜单-任务编号
+    private final static String TASK_PREFIX = "ClawerTaskScan";
+    private boolean firstExec = true;
+    private ScheduledTaskRegistrar scheduledTaskRegistrar;
+
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar scheduledTaskRegistrar) {
+        this.scheduledTaskRegistrar = scheduledTaskRegistrar;
+        initTask();
+    }
+
+    @Autowired // 注入mapper
+    private VcmClawerTaskDao vcmClawerTaskDao;
+
     @Autowired // 注入mapper
     private RecClawerLogMapper recClawerLogMapper;
-	
-	/**
-	 * 定时扫描oracle任务
-	 */
-	private void initTask() {
+    @Autowired
+    VcmClawerPipeline vcmClawerPipeline;
+    @Autowired
+    VideoMatchProcessor videoMatchProcessor;
+    @Autowired
+    UserAgentUtil userAgentUtil;
 
-		String baseTaskId = TASK_PREFIX ;
-	
-		BaseTask baseCronTask = new BaseTask(baseTaskId, firstExecCron) {
-		
-			@Override
-			public void run() {
-				try {
-					List<VcmClawerTaskVo> resultMap = vcmClawerTaskDao.findAll(TASKID);
-					if (resultMap == null || resultMap.size() == 0) {
-						log.info("未查询到相关记录..");
-						return;
-					}
-					
-					for (VcmClawerTaskVo vcmClawerTask : resultMap) {
-						String taskId = String.valueOf(vcmClawerTask.getId());
-						BaseTask oldTask = TaskConfig.getTask(taskId);
-						String expression = getTaskCronExpression(vcmClawerTask.getReptileDate(), vcmClawerTask.getFrequencyNum());
-						if (TaskConfig.containsTask(taskId)) {
-							// 任务时间是否有调整，有调整的话获取新的cron表达式
-							if (!expression.equals(oldTask.getExpression())) {
-								log.info("任务旧cron表达式[" + oldTask.getExpression() + "]新表达式["+expression+
-										"],更新任务执行频率...");
-								changeTask(taskId, expression);
-							} 
-							
-						} else {
-							if(new Date().compareTo(vcmClawerTask.getStartDate()) > 0) {
-								//任务开始时间小于当前系统时间，任务开始
-								log.info("启动爬取任务，URL[" + vcmClawerTask.getReptileUrl() + "],起始时间["+DateUtil.formatDate(vcmClawerTask.getStartDate())+
-										"],执行频率[" +expression+"]");
-								
-								BaseTask clawerTask = new BaseTask(String.valueOf(vcmClawerTask.getId()), expression) {
-									@Override
-									public void run() {
-										Map<String, Object> ruleJson = JSONUtil.json2Map(vcmClawerTask.getRuleJson());
-										BoardPageProcessor processor = new BoardPageProcessor(ruleJson);
-										Spider.create(processor)
-				                        .addUrl(vcmClawerTask.getReptileUrl())
-				                        .addPipeline(new BoradPipeline(recClawerLogMapper))
-				                        .thread(Integer.parseInt(ruleJson.get("thread").toString()))
-				                        .run();
-									} 
-								};
-								addTask(clawerTask);
-								
-							} else {
-								//任务开始时间，
-								log.info("扫描URL[" + vcmClawerTask.getReptileUrl() + "]开始时间["+DateUtil.formatDate(vcmClawerTask.getStartDate())+"],大于当前系统时间,任务暂不开始...");
-								return ;
-							}
-						} 	
-					}
-					
-					//首次获取任务后将执行周期调整为每个小时一次
-					if (firstExec) {
-						changeTask(baseTaskId, tasksScanCron);
-						firstExec = false;
-					}
-					
-					log.info("当前榜单爬取任务列表如下：");					
-					TaskConfig.getTasks().stream().forEach((BaseTask printBask)-> log.info(printBask.toString()));
-				} catch (Exception e) {
-					log.error("爬取榜单任务失败:",e);
-					throw e;
-				}
-			}
-		};
-		
-		addTask(baseCronTask);
-	}
+    /**
+     * 定时扫描oracle任务
+     */
+    private void initTask() {
 
-	//获取cron表达式
-	public String getTaskCronExpression(String reptileDate, int frequencyNum) {		
-		String[] dateInfo = reptileDate.split(":");
-		StringBuffer BufferCron = new StringBuffer();
-		BufferCron.append("0")
-		.append(" ")
-		.append(Integer.parseInt(dateInfo[1]))
-		.append(" ")
-		.append(Integer.parseInt(dateInfo[0]))
-		.append(" ")
-		.append("*/"+frequencyNum)
-		.append(" * ?");
-		return BufferCron.toString();
-	}
-	
-	/**
-	 * 添加任务
-	 * 
-	 * @param task
-	 * @return
-	 */
-	public STATUS addTask(BaseTask task) {
-		if (scheduledTaskRegistrar == null || task == null) {
-			return STATUS.FAILURE;
-		}
-		if (TaskConfig.containsTask(task.getId())) {
-			return STATUS.TASK_EXISTS;
-		}
-		try {
-			addTask0(task);
-			TaskConfig.addTask(task);
-			return STATUS.SUCCESS;
-		} catch (Exception e) {
-			log.error("新增定时任务失败:" + task, e);
-			throw e;
-		}
-	}
+        String baseTaskId = TASK_PREFIX;
 
-	/**
-	 * 改变任务执行频率
-	 * 
-	 * @param taskId
-	 * @param expression
-	 * @return
-	 */
-	public STATUS changeTask(String taskId, String expression) {
-		BaseTask baseTask = TaskConfig.getTask(taskId);
-		if (baseTask == null || expression == null) {
-			return STATUS.TASK_NOT_EXISTS;
-		}
-		log.info("change trigger expression:(id=" + taskId + ",expression=" + expression + ")");
-		baseTask.setExpression(expression);
-		return STATUS.SUCCESS;
-	}
+        BaseTask baseCronTask = new BaseTask(baseTaskId, firstExecCron) {
 
-	/**
-	 * 取消定时任务
-	 * 
-	 * @param taskId
-	 * @return
-	 */
-	public STATUS cancelTask(String taskId) {
-		if (!TaskConfig.containsTask(taskId)) {
-			return STATUS.TASK_NOT_EXISTS;
-		}
-		try {
-			log.info("cancel task:" + taskId);
-			TaskConfig.removeTask(taskId).getScheduledTask().cancel();
-		} catch (Exception e) {
-			log.error("取消任务失败:" + taskId, e);
-			throw e;
-		}
-		return STATUS.SUCCESS;
-	}
+            @Override
+            public void run() {
+                try {
+                    List<VcmClawerTaskVo> resultMap = vcmClawerTaskDao.findAll(TASKID);
+                    if (resultMap == null || resultMap.size() == 0) {
+                        log.info("未查询到相关记录..");
+                        return;
+                    }
 
-	private void addTask0(BaseTask task) {
-		log.info("add task:" + task);
-		task.setScheduledTask(addTriggerTask(task));
+                    for (VcmClawerTaskVo vcmClawerTask : resultMap) {
+                        String taskId = String.valueOf(vcmClawerTask.getId());
+                        BaseTask oldTask = TaskConfig.getTask(taskId);
+                        String expression = getTaskCronExpression(vcmClawerTask.getReptileDate(), vcmClawerTask.getFrequencyNum());
+                        if (TaskConfig.containsTask(taskId)) {
+                            // 任务时间是否有调整，有调整的话获取新的cron表达式
+                            if (!expression.equals(oldTask.getExpression())) {
+                                log.info("任务旧cron表达式[" + oldTask.getExpression() + "]新表达式[" + expression +
+                                        "],更新任务执行频率...");
+                                changeTask(taskId, expression);
+                            }
 
-	}
+                            //取消任务
+                            if (vcmClawerTask.getStatus() == 2) {
+                                log.info(oldTask.toString() + ",状态为2，取消爬虫任务");
+                                cancelTask(taskId);
+                            }
 
-	/**
-	 * 添加可变时间task
-	 * 
-	 * @param task
-	 * @param 是否立即启动
-	 * @return
-	 */
-	private ScheduledTask addTriggerTask(BaseTask task) {
-		return scheduledTaskRegistrar.scheduleTriggerTask(new TriggerTask(task, triggerContext -> {
-			CronTrigger trigger = new CronTrigger(task.getExpression());
-		    return trigger.nextExecutionTime(triggerContext);
+                        } else {
+                            if (new Date().compareTo(vcmClawerTask.getStartDate()) > 0 && vcmClawerTask.getStatus() != 2) {
+                                //任务开始时间小于当前系统时间，任务开始
+                                log.info("启动爬取任务，URL[" + vcmClawerTask.getReptileUrl() + "],起始时间[" + DateUtil.formatDate(vcmClawerTask.getStartDate()) +
+                                        "],执行频率[" + expression + "]");
 
-		}));
-	}
+                                if (vcmClawerTask.getId() == 4 || vcmClawerTask.getId() == 5) {
+                                    if(vcmClawerTask.getId() == 4){
+                                        expression ="0/30 * * * * ?";
+                                    }
+                                    BaseTask clawerTask = new BaseTask(String.valueOf(vcmClawerTask.getId()), expression) {
+                                        @Override
+                                        public void run() {
+                                            Map<String, String> ruleJson = (Map<String, String>) JSON.parse(vcmClawerTask.getRuleJson());
+                                            List<Request> list = new ArrayList<Request>();
+                                            List<Map<String, Object>> listToCatchVideo = vcmClawerTaskDao.selectToCatchVideo();
+                                            for (int i = 0; i < listToCatchVideo.size() && i < vcmClawerTask.getMaxPerNum(); i++) {
+                                                log.info("listToCatchVideo=" + listToCatchVideo);
+                                                list.clear();
+                                                for (int j =0;j<2;j++) {
+                                                    if (j == 0) {
+                                                        //目前浏览器只支持单线程处理
+                                                        list.add(new Request(ruleJson.get("searchUrl") + PhantomJsDriver.getKeyWord((String) listToCatchVideo.get(i).get("VIDEO_NAME"))));
+                                                    }else{
+                                                        list.add(new Request(ruleJson.get("searchUrl") + PhantomJsDriver.getKeyWord((String) listToCatchVideo.get(i).get("VIDEO_NAME")) + "&cat=1002"));
+                                                    }
+                                                    ruleJson.put(listToCatchVideo.get(i).get("VIDEO_NAME") + "", listToCatchVideo.get(i).get("ID") + "");
+                                                    ruleJson.put("CURRENT_PAGE_NUM", i + j + 1 + "");
+                                                    Site site = Site
+                                                            .me()
+                                                            .setCharset(ruleJson.get("charset"))
+                                                            .setTimeOut(Integer.valueOf(ruleJson.get("timeout")) * 1000) //timeOut超时时间 单位毫秒
+                                                            .setCycleRetryTimes(Integer.valueOf(ruleJson.get("retry")))
+                                                            .setSleepTime(Integer.valueOf(ruleJson.get("sleep")) * 1000)//单位毫秒
+                                                            .addHeader("Connection", "keep-alive")
+                                                            .addHeader("Cache-Control", "max-age=0")
+                                                            .setUserAgent(userAgentUtil.getRandomUserAgent());
+                                                    videoMatchProcessor.setSite(site);
+                                                    videoMatchProcessor.setRuleMap(ruleJson);
+                                                    Spider spider = Spider.create(videoMatchProcessor);
+                                                    spider.startRequest(list).addPipeline(vcmClawerPipeline)
+                                                            .thread(Integer.valueOf(ruleJson.get("thread"))).run();
+                                                    ruleJson.remove(listToCatchVideo.get(i).get("VIDEO_NAME") + "");
+                                                }
+                                            }
+                                        }
+                                    };
+                                    addTask(clawerTask);
 
-	/**
-	 * 设置固定频率的定时任务
-	 * 
-	 * @param task
-	 * @param interval
-	 */
+                                } else {
+                                    BaseTask clawerTask = new BaseTask(String.valueOf(vcmClawerTask.getId()), expression) {
+                                        @Override
+                                        public void run() {
+                                            Map<String, Object> ruleJson = JSONUtil.json2Map(vcmClawerTask.getRuleJson());
+                                            BoardPageProcessor processor = new BoardPageProcessor(ruleJson);
+                                            Spider.create(processor)
+                                                    .addUrl(vcmClawerTask.getReptileUrl())
+                                                    .addPipeline(new BoradPipeline(recClawerLogMapper))
+                                                    .thread(Integer.parseInt(ruleJson.get("thread").toString()))
+                                                    .run();
+                                        }
+                                    };
+                                    addTask(clawerTask);
+                                }
 
-	@SuppressWarnings({ "deprecation", "unused" })
-	private ScheduledTask addFixedRateTask(Runnable task, long interval) {
-		return scheduledTaskRegistrar.scheduleFixedRateTask(new IntervalTask(task, interval, 0L));
-	}
+                            } else {
+                                //任务开始时间，
+                                log.info("扫描URL[" + vcmClawerTask.getReptileUrl() + "]开始时间[" + DateUtil.formatDate(vcmClawerTask.getStartDate()) + "],大于当前系统时间,任务暂不开始...");
+                                return;
+                            }
+                        }
+                    }
 
-	/**
-	 * 设置延迟以固定频率执行的定时任务
-	 * 
-	 * @param task
-	 * @param interval
-	 * @param delay
-	 */
-	@SuppressWarnings({ "deprecation", "unused" })
-	private ScheduledTask addFixedDelayTask(Runnable task, long interval, long delay) {
-		return scheduledTaskRegistrar.scheduleFixedDelayTask(new IntervalTask(task, interval, delay));
-	}
+                    //首次获取任务后将执行周期调整为每个小时一次
+                    if (firstExec) {
+                        changeTask(baseTaskId, tasksScanCron);
+                        firstExec = false;
+                    }
 
-	/**
-	 * 添加不可改变时间表的定时任务
-	 * 
-	 * @param task
-	 */
-	@SuppressWarnings("unused")
-	private ScheduledTask addCronTask(Runnable task, String expression) {
-		return scheduledTaskRegistrar.scheduleCronTask(new CronTask(task, expression));
-	}
+                    log.info("当前爬取任务列表如下：");
+                    TaskConfig.getTasks().stream().forEach((BaseTask printBask) -> log.info(printBask.toString()));
+                } catch (Exception e) {
+                    log.error("爬取任务失败:", e);
+                    throw e;
+                }
+            }
+        };
+
+        addTask(baseCronTask);
+    }
+
+    //获取cron表达式
+    public String getTaskCronExpression(String reptileDate, int frequencyNum) {
+        String[] dateInfo = reptileDate.split(":");
+        StringBuffer BufferCron = new StringBuffer();
+        BufferCron.append("0")
+                .append(" ")
+                .append(Integer.parseInt(dateInfo[1]))
+                .append(" ")
+                .append(Integer.parseInt(dateInfo[0]))
+                .append(" ")
+                .append("*/" + frequencyNum)
+                .append(" * ?");
+        return BufferCron.toString();
+    }
+
+    /**
+     * 添加任务
+     *
+     * @param task
+     * @return
+     */
+    public STATUS addTask(BaseTask task) {
+        if (scheduledTaskRegistrar == null || task == null) {
+            return STATUS.FAILURE;
+        }
+        if (TaskConfig.containsTask(task.getId())) {
+            return STATUS.TASK_EXISTS;
+        }
+        try {
+            addTask0(task);
+            TaskConfig.addTask(task);
+            return STATUS.SUCCESS;
+        } catch (Exception e) {
+            log.error("新增定时任务失败:" + task, e);
+            throw e;
+        }
+    }
+
+    /**
+     * 改变任务执行频率
+     *
+     * @param taskId
+     * @param expression
+     * @return
+     */
+    public STATUS changeTask(String taskId, String expression) {
+        BaseTask baseTask = TaskConfig.getTask(taskId);
+        if (baseTask == null || expression == null) {
+            return STATUS.TASK_NOT_EXISTS;
+        }
+        log.info("change trigger expression:(id=" + taskId + ",expression=" + expression + ")");
+        baseTask.setExpression(expression);
+        return STATUS.SUCCESS;
+    }
+
+    /**
+     * 取消定时任务
+     *
+     * @param taskId
+     * @return
+     */
+    public STATUS cancelTask(String taskId) {
+        if (!TaskConfig.containsTask(taskId)) {
+            return STATUS.TASK_NOT_EXISTS;
+        }
+        try {
+            log.info("cancel task:" + taskId);
+            TaskConfig.removeTask(taskId).getScheduledTask().cancel();
+        } catch (Exception e) {
+            log.error("取消任务失败:" + taskId, e);
+        }
+        return STATUS.SUCCESS;
+    }
+
+    private void addTask0(BaseTask task) {
+        log.info("add task:" + task);
+        task.setScheduledTask(addTriggerTask(task));
+
+    }
+
+    /**
+     * 添加可变时间task
+     *
+     * @param task
+     * @return
+     */
+    private ScheduledTask addTriggerTask(BaseTask task) {
+        return scheduledTaskRegistrar.scheduleTriggerTask(new TriggerTask(task, triggerContext -> {
+            CronTrigger trigger = new CronTrigger(task.getExpression());
+            return trigger.nextExecutionTime(triggerContext);
+
+        }));
+    }
+
+    /**
+     * 设置固定频率的定时任务
+     *
+     * @param task
+     * @param interval
+     */
+
+    @SuppressWarnings({"deprecation", "unused"})
+    private ScheduledTask addFixedRateTask(Runnable task, long interval) {
+        return scheduledTaskRegistrar.scheduleFixedRateTask(new IntervalTask(task, interval, 0L));
+    }
+
+    /**
+     * 设置延迟以固定频率执行的定时任务
+     *
+     * @param task
+     * @param interval
+     * @param delay
+     */
+    @SuppressWarnings({"deprecation", "unused"})
+    private ScheduledTask addFixedDelayTask(Runnable task, long interval, long delay) {
+        return scheduledTaskRegistrar.scheduleFixedDelayTask(new IntervalTask(task, interval, delay));
+    }
+
+    /**
+     * 添加不可改变时间表的定时任务
+     *
+     * @param task
+     */
+    @SuppressWarnings("unused")
+    private ScheduledTask addCronTask(Runnable task, String expression) {
+        return scheduledTaskRegistrar.scheduleCronTask(new CronTask(task, expression));
+    }
 
 }
