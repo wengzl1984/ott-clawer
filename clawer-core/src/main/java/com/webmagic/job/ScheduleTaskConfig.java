@@ -124,9 +124,7 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
                                         "],执行频率[" + expression + "]");
 
                                 if (vcmClawerTask.getId() == 4 || vcmClawerTask.getId() == 5) {
-                                    if(vcmClawerTask.getId() == 4){
-                                        expression ="0/30 * * * * ?";
-                                    }
+
                                     BaseTask clawerTask = new BaseTask(String.valueOf(vcmClawerTask.getId()), expression) {
                                         @Override
                                         public void run() {
