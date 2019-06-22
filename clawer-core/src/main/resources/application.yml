@@ -1,19 +1,27 @@
 server:
   port: 8088
 spring:
-  application: ott-clawer
-
-  datasource:
+  application: paichong
+  #datasource config
+  druid:
     driverClassName: oracle.jdbc.driver.OracleDriver
-    url: jdbc:oracle:thin:@127.0.0.1:1521:orcl
-    username: wengwutan
-    password: 123456
-    initialSize: 10
-    maxActive: 100
-    minIdle: 10
-    maxWait: 50000
-
+    url: jdbc:oracle:thin:@172.16.16.16:1521:orcl
+    username: vcmuser1
+    password: funo1234
+    MaxActive: 10
+    timeBetweenEvictionRunsMillis: 60000
+    maxWait: 10000
+    minEvictableIdleTimeMillis: 300000
+    minIdle: 1
+    validationQuery: SELECT 1 from dual
 mybatis:
-  type-aliases-package: com.webmagic.dao
+  type-aliases-package: com.webmagic.entity
   mapper-locations: classpath:mapper/*.xml
   config-location: classpath:mybatis/mybatis-config.xml
+phantomjs:
+  path: E:\work soft\phantomjs-2.1.1-windows\bin\phantomjs.exe
+  maxPageNum: 3
+rule:
+  name:
+    chinapiaofang: 中国票房网电影爬取规则
+    douban: 豆瓣网电影爬取规则

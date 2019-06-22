@@ -1,24 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.webmagic.dao.RecClawerLogMapper">
+	
+    <insert id="insert" parameterType="java.util.Map">
+    insert into rec_clawer_log (id,respone_content, task_id, relate_type)
+    values ( SEQ_vcm_log_info.Nextval,#{info,jdbcType=VARCHAR}, #{taskId,jdbcType=NUMERIC},
+      #{relateType,jdbcType=NUMERIC})
+  </insert>
 
-     <insert id="insertRecord" parameterType="com.webmagic.entity.VcmClawerLogVo">
-             INSERT INTO REC_Clawer_LOG
-             (ID, RESPONE_CONTENT, EXEC_DATE, STATUS)
-             values( #{id},#{responeContext},#{execDate},#{status}
-                 )
-        </insert>
-        
-        
-        <!-- 批量插入生成的兑换码 -->
-       <insert id ="insertRecdBatch" parameterType="java.util.List" >
-             INSERT INTO REC_Clawer_LOG
-             (ID, RESPONE_CONTENT, EXEC_DATE, STATUS)
-             values
-             <foreach collection ="list" item="VcmClawerLogVo" index= "index" separator =",">
-                 ( #{VcmClawerLogVo.id},#{VcmClawerLogVo.responeContext},#{VcmClawerLogVo.execDate},#{VcmClawerLogVo.status}
-                 )
-             </foreach >
-      </insert >
 
+  <insert id="insertRecord" parameterType="com.webmagic.entity.VcmClawerLogVo">
+		
+		<selectKey resultType="long" keyProperty="id" order="BEFORE">
+			select SEQ_vcm_log_info.nextval from dual
+		</selectKey>
+		INSERT INTO REC_Clawer_LOG (ID, RESPONE_CONTENT, EXEC_DATE, STATUS)
+		values( #{id},#{responeContext},#{execDate},#{status} )
+	</insert>
 </mapper>

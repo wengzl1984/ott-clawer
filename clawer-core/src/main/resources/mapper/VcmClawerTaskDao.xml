@@ -8,4 +8,9 @@
 			close=")" separator=","> #{id} </foreach>
 	</select>
 
+	<select id="selectToCatchVideo" resultType="Map" >
+        select vc.id,vc.video_name,vc.status,vc.code,vc.series_id ,vc.content_type from vcm_clawer_video_info vc where vc.status=0 and (vc.douban_status_type in (0,2) or vc.cbooo_status_type in (0,2))
+
+    </select>
+
 </mapper>
