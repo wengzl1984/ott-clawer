@@ -20,8 +20,4 @@ mybatis:
   config-location: classpath:mybatis/mybatis-config.xml
 phantomjs:
   path: E:\work soft\phantomjs-2.1.1-windows\bin\phantomjs.exe
-  maxPageNum: 3
-rule:
-  name:
-    chinapiaofang: 中国票房网电影爬取规则
-    douban: 豆瓣网电影爬取规则
+  maxPageNum: 10

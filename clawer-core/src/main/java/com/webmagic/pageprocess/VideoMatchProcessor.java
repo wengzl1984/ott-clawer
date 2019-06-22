@@ -1,7 +1,6 @@
 package com.webmagic.pageprocess;
 
 import com.webmagic.util.PhantomJsDriver;
-import com.webmagic.util.UserAgentUtil;
 import org.apache.log4j.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -26,7 +25,7 @@ import java.util.regex.Pattern;
 
 /**
  * @Auther: ljs
- * @Date: 2019/6/21 12:31
+ * @Date: 2019/6/15 12:31
  * @Description:
  */
 @Component
@@ -40,15 +39,16 @@ public class VideoMatchProcessor implements PageProcessor {
     private String searchVideoName = null;//要查询的媒资名称
     private Map<String, String> ruleMap = new HashMap<String, String>();//规则map
     private WebDriver driver = null;
-    private Site site ;
+    private Site site;
     ;
     @Value("${phantomjs.maxPageNum}")
     private int maxPageNum;
     private String relateType = null;
 
-    public VideoMatchProcessor(){
+    public VideoMatchProcessor() {
 
     }
+
     public VideoMatchProcessor(Map<String, String> map, Site site) {
         this.ruleMap = map;
         this.site = site;
@@ -63,6 +63,7 @@ public class VideoMatchProcessor implements PageProcessor {
     public void setSite(Site site) {
         this.site = site;
     }
+
     public Map<String, String> getRuleMap() {
         return ruleMap;
     }
@@ -70,6 +71,7 @@ public class VideoMatchProcessor implements PageProcessor {
     public void setRuleMap(Map<String, String> ruleMap) {
         this.ruleMap = ruleMap;
     }
+
     @Override
     public void process(Page page) {
         log.info("start time=" + format.format(new Date()));
@@ -95,14 +97,28 @@ public class VideoMatchProcessor implements PageProcessor {
             List<String> link = html.xpath("//*[@id=\"top\"]/div[3]/div[2]/div[2]/ul[1]/*/a/@href").all();
             log.info("link=" + link);
             List<String> linkName = html.xpath("//*[@id=\"top\"]/div[3]/div[2]/div[2]/ul[1]/*/a/text()").all();
+
             for (int i = 0; i < linkName.size(); i++) {
                 log.info("linkName=" + linkName.get(i));
-                if ((descInfo.get(i).length()) > 5) {
+                if ((descInfo.get(i).length()) > 5 && descInfo.get(i).indexOf("万") != -1) {
                     log.info("add page link=" + link.get(i));
                     page.addTargetRequest(link.get(i));
                 }
             }
+            //说明未查询到符合的资源
+            if (page.getTargetRequests().size() <= 0) {
+                log.info("searchVideoName=" + searchVideoName + ",can not find");
+                HashMap<String, Object> pipelineMap = new HashMap<String, Object>();
+                StringBuffer sb = new StringBuffer();
+                sb.append("{" + "\"matchCboooName\":" + "\"" + null + "\"");
+                sb.append(",\"videoBoxOffice\":" + "\"" + null + "\"" +
+                        "}");
+                pipelineMap.put("info", sb.toString());
+                pipelineMap.put("taskId", ruleMap.get(searchVideoName));
+                pipelineMap.put("relateType", relateType);
 
+                page.putField("Info", pipelineMap);
+            }
             log.info("currentPageNum=" + ruleMap.get("CURRENT_PAGE_NUM") + ",maxPageNum=" + maxPageNum);
             if ((Integer.valueOf(ruleMap.get("CURRENT_PAGE_NUM"))) % maxPageNum == 0) {
                 log.info("cbooo close phantomjs ");
@@ -136,6 +152,24 @@ public class VideoMatchProcessor implements PageProcessor {
                     log.info("add page link=" + link.get(i));
                     page.addTargetRequest(link.get(i));
                 }
+            }
+            //说明未查询到符合的资源
+            if (page.getTargetRequests().size() <= 0) {
+                log.info("searchVideoName=" + searchVideoName + ",can not find");
+                HashMap<String, Object> pipelineMap = new HashMap<String, Object>();
+                StringBuffer sb = new StringBuffer();
+                sb.append("{ " + "\"matchDouBanName\":" + "\"" + null + "\"" + ",\"matchSeriesCountry\":" + "\"" + null + "\",")
+                        .append("\"matchSeriesDirector\":" + "\"" + null + "\",")
+                        .append("\"matchReleaseDates\":" + "\"" + null + "\",")
+                        .append("\"videoCast\":" + "\"" + null + "\",")
+                        .append("\"videoTags\":" + "\"" + null + "\",")
+                        .append("\"videoRate\":" + "\"" + null + "\",")
+                        .append("\"imdb\":" + "\"" + null + "\"}");
+                pipelineMap.put("info", sb.toString());
+                pipelineMap.put("taskId", ruleMap.get(searchVideoName));
+                pipelineMap.put("relateType", relateType);
+
+                page.putField("Info", pipelineMap);
             }
             log.info("currentPageNum=" + ruleMap.get("CURRENT_PAGE_NUM") + ",maxPageNum=" + maxPageNum);
             if ((Integer.valueOf(ruleMap.get("CURRENT_PAGE_NUM"))) % maxPageNum == 0) {

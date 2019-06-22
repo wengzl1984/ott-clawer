@@ -30,7 +30,7 @@ public class VcmClawerPipeline implements Pipeline {
                 Map<String, Object> info = (HashMap<String, Object>) entry.getValue();
                 log.info("insert db Info=" + info);
                 try {
-                 //   recClawerLogMapper.insert(info);
+                    recClawerLogMapper.insert(info);
                 } catch (Exception e) {
                     log.error("exception e:", e);
                     // 如果我们需要捕获异常后，同时进行回滚，通过
