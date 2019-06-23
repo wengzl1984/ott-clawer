@@ -39,7 +39,7 @@ public class BoradPipeline implements Pipeline {
 		List<String> videoCast = data.get(BoardPageProcessor.videoCast);//主演
 		List<String> videoBoxOffice = data.get(BoardPageProcessor.videoBoxOffice);//票房
 		List<String> contentType = data.get(BoardPageProcessor.contentType);//票房
-		int ID = resultItems.get("ID");
+		int relateType = resultItems.get("ID");
 
 		log.info("pipeLine资源名称=" + videoName);
 		log.info("pipeLine上映时间=" + videoReleaseDates);
@@ -76,10 +76,11 @@ public class BoradPipeline implements Pipeline {
 			}
 
 			//入库
-			vcmLog.setId(ID);
+			vcmLog.setId(0);
 			vcmLog.setExecDate(new Date(System.currentTimeMillis()));
 			vcmLog.setStatus(0);
 			vcmLog.setResponeContext(JSONUtil.toJson(responeContent));
+			vcmLog.setRelateType(relateType);
 			//vcmList.add(vcmLog);
 			recClawerLogMapper.insertRecord(vcmLog);
 		}
