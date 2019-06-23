@@ -81,7 +81,7 @@ public class BoradPipeline implements Pipeline {
 			vcmLog.setStatus(0);
 			vcmLog.setResponeContext(JSONUtil.toJson(responeContent));
 			vcmLog.setRelateType(relateType);
-			//vcmList.add(vcmLog); 
+			//vcmList.add(vcmLog);
 			recClawerLogMapper.insertRecord(vcmLog);
 		}
 		//recClawerLogMapper.insertRecdBatch(vcmList);
