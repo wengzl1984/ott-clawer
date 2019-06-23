@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.webmagic.job.BaseTask;
 import com.webmagic.job.ScheduleTaskConfig;
 import com.webmagic.job.TaskConfig;
-import com.webmagic.pageprocess.VideoMatchProcessor;
+import com.webmagic.pageprocess.CboooVideoMatchProcessor;
 import com.webmagic.util.PhantomJsDriver;
 import com.webmagic.util.UserAgentUtil;
 import org.slf4j.Logger;
@@ -30,7 +30,7 @@ public class StartUpController {
     private Logger log = LoggerFactory.getLogger(StartUpController.class);
 
     @Autowired
-    VideoMatchProcessor videoMatchProcessor;
+    CboooVideoMatchProcessor cboooVideoMatchProcessor;
     @Autowired
     UserAgentUtil userAgentUtil;
 
@@ -74,9 +74,9 @@ public class StartUpController {
 
         }
 
-        videoMatchProcessor.setRuleMap(ruleMap);
-        videoMatchProcessor.setSite(site);
-        Spider spider = Spider.create(videoMatchProcessor);
+        cboooVideoMatchProcessor.setRuleMap(ruleMap);
+        cboooVideoMatchProcessor.setSite(site);
+        Spider spider = Spider.create(cboooVideoMatchProcessor);
 
         spider.startRequest(list).thread(1).run();
         return "开始爬虫=" + spider.getPageCount();
