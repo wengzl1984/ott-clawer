@@ -6,8 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.alibaba.fastjson.JSON;
-import com.webmagic.pageprocess.VideoMatchProcessor;
-import com.webmagic.pipeline.VcmClawerPipeline;
+import com.webmagic.pageprocess.CboooVideoMatchProcessor;
+import com.webmagic.pageprocess.DouBanVideoMatchProcessor;
+import com.webmagic.pipeline.VideoMatchPipeline;
 import com.webmagic.util.PhantomJsDriver;
 import com.webmagic.util.UserAgentUtil;
 import org.slf4j.Logger;
@@ -75,9 +76,11 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
     @Autowired // 注入mapper
     private RecClawerLogMapper recClawerLogMapper;
     @Autowired
-    VcmClawerPipeline vcmClawerPipeline;
+    VideoMatchPipeline videoMatchPipeline;
     @Autowired
-    VideoMatchProcessor videoMatchProcessor;
+    DouBanVideoMatchProcessor douBanVideoMatchProcessor;
+    @Autowired
+    CboooVideoMatchProcessor cboooVideoMatchProcessor;
     @Autowired
     UserAgentUtil userAgentUtil;
 
@@ -130,35 +133,47 @@ public class ScheduleTaskConfig implements SchedulingConfigurer {
                                         public void run() {
                                             Map<String, String> ruleJson = (Map<String, String>) JSON.parse(vcmClawerTask.getRuleJson());
                                             List<Request> list = new ArrayList<Request>();
-                                            List<Map<String, Object>> listToCatchVideo = vcmClawerTaskDao.selectToCatchVideo();
+                                            List<Map<String, Object>> listToCatchVideo = null;
+                                            if (vcmClawerTask.getId() == 4) {
+                                                listToCatchVideo = vcmClawerTaskDao.selectDouBanToCatchVideo();
+                                            } else {
+                                                listToCatchVideo = vcmClawerTaskDao.selectCboooToCatchVideo();
+                                            }
                                             for (int i = 0; i < listToCatchVideo.size() && i < vcmClawerTask.getMaxPerNum(); i++) {
                                                 log.info("listToCatchVideo=" + listToCatchVideo);
                                                 list.clear();
-                                                for (int j =0;j<2;j++) {
-                                                    if (j == 0) {
-                                                        //目前浏览器只支持单线程处理
-                                                        list.add(new Request(ruleJson.get("searchUrl") + PhantomJsDriver.getKeyWord((String) listToCatchVideo.get(i).get("VIDEO_NAME"))));
-                                                    }else{
-                                                        list.add(new Request(ruleJson.get("searchUrl") + PhantomJsDriver.getKeyWord((String) listToCatchVideo.get(i).get("VIDEO_NAME")) + "&cat=1002"));
-                                                    }
-                                                    ruleJson.put(listToCatchVideo.get(i).get("VIDEO_NAME") + "", listToCatchVideo.get(i).get("ID") + "");
-                                                    ruleJson.put("CURRENT_PAGE_NUM", i + j + 1 + "");
-                                                    Site site = Site
-                                                            .me()
-                                                            .setCharset(ruleJson.get("charset"))
-                                                            .setTimeOut(Integer.valueOf(ruleJson.get("timeout")) * 1000) //timeOut超时时间 单位毫秒
-                                                            .setCycleRetryTimes(Integer.valueOf(ruleJson.get("retry")))
-                                                            .setSleepTime(Integer.valueOf(ruleJson.get("sleep")) * 1000)//单位毫秒
-                                                            .addHeader("Connection", "keep-alive")
-                                                            .addHeader("Cache-Control", "max-age=0")
-                                                            .setUserAgent(userAgentUtil.getRandomUserAgent());
-                                                    videoMatchProcessor.setSite(site);
-                                                    videoMatchProcessor.setRuleMap(ruleJson);
-                                                    Spider spider = Spider.create(videoMatchProcessor);
-                                                    spider.startRequest(list).addPipeline(vcmClawerPipeline)
-                                                            .thread(Integer.valueOf(ruleJson.get("thread"))).run();
-                                                    ruleJson.remove(listToCatchVideo.get(i).get("VIDEO_NAME") + "");
+                                                if (vcmClawerTask.getId() == 4) {
+                                                    list.add(new Request(ruleJson.get("searchUrl") + PhantomJsDriver.getKeyWord((String) listToCatchVideo.get(i).get("VIDEO_NAME")) + "&cat=1002"));
+
+                                                } else {
+                                                    list.add(new Request(ruleJson.get("searchUrl") + PhantomJsDriver.getKeyWord((String) listToCatchVideo.get(i).get("VIDEO_NAME"))));
+
                                                 }
+                                                ruleJson.put(listToCatchVideo.get(i).get("VIDEO_NAME") + "", listToCatchVideo.get(i).get("ID") + "");
+                                                ruleJson.put("CURRENT_PAGE_NUM", i + 1 + "");
+                                                Site site = Site
+                                                        .me()
+                                                        .setCharset(ruleJson.get("charset"))
+                                                        .setTimeOut(Integer.valueOf(ruleJson.get("timeout")) * 1000) //timeOut超时时间 单位毫秒
+                                                        .setCycleRetryTimes(Integer.valueOf(ruleJson.get("retry")))
+                                                        .setSleepTime(Integer.valueOf(ruleJson.get("sleep")) * 1000)//单位毫秒
+                                                        .addHeader("Connection", "keep-alive")
+                                                        .addHeader("Cache-Control", "max-age=0")
+                                                        .setUserAgent(userAgentUtil.getRandomUserAgent());
+                                                Spider spider = null;
+                                                if (vcmClawerTask.getId() == 4) {
+                                                    douBanVideoMatchProcessor.setSite(site);
+                                                    douBanVideoMatchProcessor.setRuleMap(ruleJson);
+                                                    spider = Spider.create(douBanVideoMatchProcessor);
+                                                } else {
+                                                    cboooVideoMatchProcessor.setSite(site);
+                                                    cboooVideoMatchProcessor.setRuleMap(ruleJson);
+                                                    spider = Spider.create(cboooVideoMatchProcessor);
+                                                }
+                                                spider.startRequest(list).addPipeline(videoMatchPipeline)
+                                                        .thread(Integer.valueOf(ruleJson.get("thread"))).run();
+                                                ruleJson.remove(listToCatchVideo.get(i).get("VIDEO_NAME") + "");
+
                                             }
                                         }
                                     };
