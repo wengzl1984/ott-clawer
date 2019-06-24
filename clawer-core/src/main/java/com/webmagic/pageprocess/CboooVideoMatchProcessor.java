@@ -84,8 +84,6 @@ public class CboooVideoMatchProcessor implements PageProcessor {
             log.info("searchVideoName=" + searchVideoName);
             if (driver == null) {
                 driver = phantomJsDriver.getPhantomJSDriver();
-                driver.manage().window().setSize(new Dimension(1920, 1080));
-
             }
             driver.get(page.getRequest().getUrl());
             try {
