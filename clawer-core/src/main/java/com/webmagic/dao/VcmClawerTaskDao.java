@@ -11,6 +11,6 @@ import com.webmagic.entity.VcmClawerTaskVo;
 @Repository
 public interface VcmClawerTaskDao {
 	List<VcmClawerTaskVo> findAll(int[] taskId);
-	public List<Map<String,Object>> selectToCatchVideo();
-
+	public List<Map<String,Object>> selectDouBanToCatchVideo();
+	public List<Map<String,Object>> selectCboooToCatchVideo();
 }
