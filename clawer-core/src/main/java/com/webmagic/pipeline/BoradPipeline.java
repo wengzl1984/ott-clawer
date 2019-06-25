@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 import com.webmagic.dao.RecClawerLogMapper;
 import com.webmagic.entity.VcmClawerLogVo;
 import com.webmagic.pageprocess.BoardPageProcessor;
+import com.webmagic.util.DateUtil;
 import com.webmagic.util.JSONUtil;
 
 import us.codecraft.webmagic.ResultItems;
@@ -31,6 +32,7 @@ public class BoradPipeline implements Pipeline {
 		}
 		
 		//int 
+		String currentDate = DateUtil.getCurrDate(DateUtil.YYYYMMHH);
 		Map<String, List<String>> data = resultItems.get("data");
 		List<String> videoName = data.get(BoardPageProcessor.videoName);//资源名称
 		List<String> videoRanking = data.get(BoardPageProcessor.videoRanking);//排名
@@ -74,6 +76,8 @@ public class BoradPipeline implements Pipeline {
 			if (contentType != null) {//类型
 				responeContent.put(BoardPageProcessor.contentType, Integer.parseInt(contentType.get(index)));
 			}
+			responeContent.put(BoardPageProcessor.rankingId, currentDate + "-" + relateType );//YYYYMMHH + (1/2/3)
+
 
 			//入库
 			vcmLog.setId(0);
