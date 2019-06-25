@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.spider.extension.dao.CommonDao" >
+
+    <select id="selRecClawerLog" parameterType="java.util.Map" resultType="java.util.Map">
+        select a.ID,
+        a.respone_content,
+        a.exec_date,
+        a.STATUS,
+        a.INFO_DESC,
+        a.ERROR_TYPE,
+        a.ERROR_INFO,
+        a.TASK_ID,
+        a.RELATE_ID,
+        a.RELATE_TYPE
+        from REC_Clawer_LOG a
+        where 1 = 1
+        <if test="id != null and id != ''">
+            and a.ID = #{id}
+        </if>
+        <if test="status != null and status != ''">
+            and a.status = #{status}
+        </if>
+        <if test="relateType != null and relateType != ''">
+            and a.RELATE_TYPE = #{relateType}
+        </if>
+        <if test="taskId != null and taskId != ''">
+            and a.TASK_ID = #{taskId}
+        </if>
+        <if test="typeArray != null and typeArray != ''">
+            and a.RELATE_TYPE in
+            <foreach collection="typeArray" open="(" separator="," close=")" item="typeArray">
+                #{typeArray}
+            </foreach>
+        </if>
+    </select>
+
+    <update id="updateRecClawerLog" parameterType="java.util.Map">
+        update REC_Clawer_LOG a set a.status = #{logStatus}
+        <if test="errorType != null and errorType != ''">
+            ,a.ERROR_TYPE = #{errorType}
+        </if>
+        <if test="errorInfo != null and errorInfo != ''">
+            ,a.ERROR_INFO = #{errorInfo}
+        </if>
+         where a.id=#{logId}
+    </update>
+</mapper>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.spider.extension.dao.RankingDao" >
+
+
+    <select id="selRankingSeq"  resultType="java.lang.Integer">
+        select SEQ_ranking_info.Nextval as rankSeq from dual
+    </select>
+    <insert id="saveRankInfo" parameterType="java.util.Map">
+        insert into vcm_ranking_info
+        (id,
+        type,
+        video_name,
+        <if test="contentType != null and contentType != ''">
+            content_type,
+        </if>
+        <if test="videoRanking != null and videoRanking != ''">
+            video_ranking,
+        </if>
+        <if test="videoRate != null and videoRate != ''">
+            video_rate,
+        </if>
+        <if test="videoReleaseDates != null and videoReleaseDates != ''">
+            video_release_dates,
+        </if>
+        <if test="videoCast != null and videoCast != ''">
+            video_cast,
+        </if>
+        <if test="videoBoxOffice != null and videoBoxOffice != ''">
+            video_box_office,
+        </if>
+        <if test="rankingId != null and rankingId != ''">
+            ranking_id,
+        </if>
+        update_date)
+        values
+        (#{rid},
+        #{type},
+        #{videoName},
+        <if test="contentType != null and contentType != ''">
+            #{contentType},
+        </if>
+        <if test="videoRanking != null and videoRanking != ''">
+            #{videoRanking},
+        </if>
+        <if test="videoRate != null and videoRate != ''">
+            #{videoRate},
+        </if>
+        <if test="videoReleaseDates != null and videoReleaseDates != ''">
+            to_date(#{videoReleaseDates},'yyyy-mm-dd'),
+        </if>
+        <if test="videoCast != null and videoCast != ''">
+            #{videoCast},
+        </if>
+        <if test="videoBoxOffice != null and videoBoxOffice != ''">
+            #{videoBoxOffice},
+        </if>
+        <if test="rankingId != null and rankingId != ''">
+            #{rankingId},
+        </if>
+        sysdate
+        )
+    </insert>
+    <delete id="delRankInfo">
+        delete from vcm_ranking_info
+    </delete>
+    <insert id="saveHisRankFromRankingInfo">
+         insert into vcm_ranking_history_info
+           (id,
+            type,
+            video_name,
+            content_type,
+            video_ranking,
+            video_rate,
+            update_date,
+            video_release_dates,
+            video_cast,
+            video_box_office)
+           select a.id,
+                  a.type,
+                  a.video_name,
+                  a.content_type,
+                  a.video_ranking,
+                  a.video_rate,
+                  a.update_date,
+                  a.video_release_dates,
+                  a.video_cast,
+                  a.video_box_office
+             from vcm_ranking_info a
+    </insert>
+
+    <select id="selVcmRankingInfo" resultType="java.util.Map">
+      select a.id,
+             a.type,
+             a.video_name,
+             a.content_type,
+             a.video_ranking,
+             a.video_rate,
+             a.update_date,
+             a.video_release_dates,
+             a.video_cast,
+             a.video_box_office
+        from vcm_ranking_info a
+    </select>
+
+    <select id="selMediaView" parameterType="java.util.Map" resultType="java.util.Map">
+        select a.media_id,a.name,a.is_Charge from VCM_MEDIA_VIEW a where a.name like '%${videoName}%'
+    </select>
+
+    <insert id="saveRankingInfoMatch" parameterType="java.util.Map">
+        insert into VCM_RANKING_INFO_MATCH
+          (ID,OTT_FREE,OTT_MATCH,RANKING_ID,RANKING_INFO_ID)
+        values
+          (SEQ_vcm_match_info.Nextval,#{isCharge}, #{ottMatch}, #{rankingId},#{rid})
+    </insert>
+
+    <insert id="saveRankingInfoMatchRela" parameterType="java.util.Map">
+        insert into VCM_RANKINGINFO_MEDIA_RELA
+          (ID, VCM_MEDIA_ID, RANKING_ID,RANKING_INFO_ID, UPDATE_DATE)
+        values
+          (SEQ_vcm_media_rela.Nextval, #{mediaId}, #{rankingId},#{rid}, sysdate)
+    </insert>
+</mapper>

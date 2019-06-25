@@ -1,0 +1,20 @@
+server:
+  port: 8088
+spring:
+  application: paichong
+  #datasource config
+  druid:
+    driverClassName: oracle.jdbc.driver.OracleDriver
+    url: jdbc:oracle:thin:@172.16.16.16:1521:orcl
+    username: vcmuser1
+    password: funo1234
+    MaxActive: 10
+    timeBetweenEvictionRunsMillis: 60000
+    maxWait: 10000
+    minEvictableIdleTimeMillis: 300000
+    minIdle: 1
+    validationQuery: SELECT 1 from dual
+mybatis:
+  type-aliases-package: com.spider.extension.entity
+  mapper-locations: classpath:mapper/*Mapper.xml
+  config-location: classpath:mybatis/mybatis-config.xml

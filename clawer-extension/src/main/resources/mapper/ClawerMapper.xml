@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.spider.extension.dao.ClawerDao" >
+
+    <select id="selVcmClawerVideo" parameterType="java.util.Map" resultType="java.util.Map">
+        select a.id,
+            a.video_name,
+            a.series_id,
+            a.status,
+            a.douban_status_type,
+            a.cbooo_status_type
+        from VCM_Clawer_VIDEO_INFO a
+          where 1 = 1
+        <if test="status != null and status != ''">
+            and a.status = #{status}
+        </if>
+    </select>
+
+    <update id="updateClawerInfo" parameterType="java.util.Map">
+        update VCM_Clawer_VIDEO_INFO a set a.UPDATE_DATE = sysdate
+        <if test="douBanStatusType != null and douBanStatusType != ''">
+            ,a.douban_status_type = #{douBanStatusType}
+        </if>
+        <if test="cboooStatusType != null and cboooStatusType != ''">
+            ,a.cbooo_status_type = #{cboooStatusType}
+        </if>
+        <if test="errorType != null and errorType != ''">
+            ,a.ERROR_TYPE = #{errorType}
+        </if>
+        <if test="errorInfo != null and errorInfo != ''">
+            ,a.ERROR_INFO = #{errorInfo}
+        </if>
+        <if test="matchDouBanName != null and matchDouBanName != ''">
+            ,a.MATCH_DOUBAN_NAME = #{matchDouBanName}
+        </if>
+        <if test="matchCboooName != null and matchCboooName != ''">
+            ,a.MATCH_cbooo_NAME = #{matchCboooName}
+        </if>
+        <if test="matchSeriesCountry != null and matchSeriesCountry != ''">
+            ,a.MATCH_SERIES_COUNTRY = #{douBanStatusType}
+        </if>
+        <if test="matchSeriesDirector != null and matchSeriesDirector != ''">
+            ,a.MATCH_SERIES_Director = #{matchSeriesDirector}
+        </if>
+        <if test="matchReleaseDates != null and matchReleaseDates != ''">
+            ,a.VIDEO_Release_Dates = to_date(#{matchReleaseDates},'yyyy-mm-dd')
+        </if>
+        <if test="videoCast != null and videoCast != ''">
+            ,a.VIDEO_Cast = #{videoCast}
+        </if>
+        <if test="videoTags != null and videoTags != ''">
+            ,a.VIDEO_TAGS = #{videoTags}
+        </if>
+        <if test="videoRate != null and videoRate != ''">
+            ,a.VIDEO_RATE = #{videoRate}
+        </if>
+        <if test="imdb != null and imdb != ''">
+            ,a.imdb = #{imdb}
+        </if>
+        <if test="videoBoxOffice != null and videoBoxOffice != ''">
+            ,a.VIDEO_BOX_OFFICE = #{videoBoxOffice}
+        </if>
+        <if test="status != null and status != ''">
+            ,a.status = #{status}
+        </if>
+         where a.id=#{id}
+    </update>
+
+</mapper>
