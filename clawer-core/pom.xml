@@ -7,8 +7,8 @@
     <artifactId>spider</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <artifactId>spider-core</artifactId>
-  <name>spider-core</name>
+  <artifactId>clawer-core</artifactId>
+  <name>clawer-core</name>
   <url>http://maven.apache.org</url>
   
   <properties>
