@@ -85,8 +85,11 @@ public class RankingService {
     public void saveRankAndUpdateLog(Map<String,Object> dataMap,String opType){
         //opType，操作类型标记，=1表示正常数据处理操作，=2表示仅更新错误日志表
         if (opType != null && opType.equals("1")){
-            Integer rankingId = rankingDao.selRankingSeq();
-            dataMap.put("rankingId",rankingId);
+            Integer mainRankingId = rankingDao.selRankingSeq();
+            dataMap.put("rid",mainRankingId);
+            if (!dataMap.containsKey("rankingId") || dataMap.get("rankingId") ==null){
+                dataMap.put("rankingId","");
+            }
             rankingDao.saveRankInfo(dataMap); //将榜单日志信息插入榜单信息表
             //增加逻辑：榜单新增后要增加命中相关表
             //查看媒资视图是否有名称模糊匹配的表，有的话表示命中，并把命中的信息写到相关表
@@ -94,18 +97,24 @@ public class RankingService {
             int ottMatch = 0;
             if (mList != null && mList.size() > 0){
                 ottMatch = mList.size();
+                dataMap.put("isCharge",mList.get(0).get("IS_CHARGE").toString());
+            }else{
+                //没有找到数据的情况下，isCharge为空
+                dataMap.put("isCharge","");
             }
             dataMap.put("ottMatch",ottMatch);
             rankingDao.saveRankingInfoMatch(dataMap);
             if (mList != null && mList.size() > 0){
                 Map<String,Object> relaMap = new HashMap<String,Object>();
-                relaMap.put("rankingId",rankingId);
+                relaMap.put("rankingId",dataMap.get("rankingId"));
+                relaMap.put("rid",dataMap.get("rid"));
                 for (Map<String,Object> m : mList){
-                     relaMap.put("mediaId",m.get("MEDIA_ID").toString());
-                     rankingDao.saveRankingInfoMatchRela(relaMap);
+                    relaMap.put("mediaId",m.get("MEDIA_ID").toString());
+                    rankingDao.saveRankingInfoMatchRela(relaMap);
                 }
             }
         }
         commonDao.updateRecClawerLog(dataMap);//更新日志表
     }
+
 }
