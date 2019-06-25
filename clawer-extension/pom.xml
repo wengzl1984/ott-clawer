@@ -4,11 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.ott</groupId>
-    <artifactId>spider</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>clawer</artifactId>
+    <version>${project.version}</version>
   </parent>
   <artifactId>clawer-extension</artifactId>
-  <name>spider-extension</name>
+  <name>clawer-extension</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
