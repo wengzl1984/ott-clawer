@@ -4,13 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.ott</groupId>
-    <artifactId>spider</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>clawer</artifactId>
+    <version>${project.version}</version>
   </parent>
-  <groupId>com.ott</groupId>
-  <artifactId>spider-extension</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <name>spider-extension</name>
+  <artifactId>clawer-extension</artifactId>
+  <name>clawer-extension</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,7 +17,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
