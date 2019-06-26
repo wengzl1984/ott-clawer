@@ -22,7 +22,7 @@ public class JobTask {
 
     private static Logger log = Logger.getLogger(JobTask.class);
 
-    @Scheduled(cron = "* * 0/2 * * * ")
+    @Scheduled(cron = "0 0/2 * * * * ")
     public void dealRankDataTask() throws InterruptedException {
         log.info("dealRankDataTask begin:" + new Date());
         //处理榜单信息 begin
@@ -67,7 +67,7 @@ public class JobTask {
         log.info("dealRankDataTask end:" + new Date());
     }
 
-    @Scheduled(cron = "* * 1/2 * * * ")
+    @Scheduled(cron = "0 1/2 * * * * ")
     public void dealClawerDataTask() throws InterruptedException {
         log.info("dealClawerDataTask begin:" + new Date());
         //处理媒资信息 begin
@@ -78,8 +78,19 @@ public class JobTask {
             for (Map<String,Object> dataMap:list){
                 //处理豆瓣的信息
                 Map<String,Object> dbMap = clawerService.checkDouBanLogData(dataMap);
-                //处理中国网的信息
-                Map<String,Object> cbMap = clawerService.checkCboooLogData(dataMap);
+                //处理中国网的信息,CONTENT_TYPE=1情况下才处理中国网信息，不然默认成功
+                Map<String,Object> cbMap = new HashMap<String,Object>();
+                if (dataMap.get("CONTENT_TYPE") != null && dataMap.get("CONTENT_TYPE").toString().equals("1")){
+                    cbMap = clawerService.checkCboooLogData(dataMap);
+                }else{
+                    cbMap.put("code",ConstConfig.LOG_STATUS_DEAL_SUCESS);
+                    Map<String,Object> sucMap = new HashMap<String,Object>();
+                    sucMap.put("id",dataMap.get("ID").toString());
+                    sucMap.put("cboooStatusType",ConstConfig.LOG_STATUS_DEAL_SUCESS);
+                    cbMap.put("clawer",sucMap);
+                    cbMap.put("logList",new ArrayList<Map<String,Object>>());
+                }
+
                 //媒资表状态更新对象
                 Map<String,Object> clawerStatusMap = new HashMap<String,Object>();
                 String dbCode = dbMap.get("code").toString();

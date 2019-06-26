@@ -75,7 +75,8 @@
             update_date,
             video_release_dates,
             video_cast,
-            video_box_office)
+            video_box_office,
+            ranking_id)
            select a.id,
                   a.type,
                   a.video_name,
@@ -85,7 +86,8 @@
                   a.update_date,
                   a.video_release_dates,
                   a.video_cast,
-                  a.video_box_office
+                  a.video_box_office,
+                  a.ranking_id
              from vcm_ranking_info a
     </insert>
 
