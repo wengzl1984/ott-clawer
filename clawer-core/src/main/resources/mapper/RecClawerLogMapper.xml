@@ -14,7 +14,7 @@
 		<selectKey resultType="long" keyProperty="id" order="BEFORE">
 			select SEQ_vcm_log_info.nextval from dual
 		</selectKey>
-		INSERT INTO REC_Clawer_LOG (ID, RESPONE_CONTENT, EXEC_DATE, STATUS, RELATE_TYPE)
-		values( #{id},#{responeContext},#{execDate},#{status}, #{relateType})
+		INSERT INTO REC_Clawer_LOG (ID, RESPONE_CONTENT, EXEC_DATE, STATUS, RELATE_TYPE, RANKING_ID)
+		values( #{id},#{responeContext},#{execDate},#{status}, #{relateType}, #{rankingId})
 	</insert>
 </mapper>

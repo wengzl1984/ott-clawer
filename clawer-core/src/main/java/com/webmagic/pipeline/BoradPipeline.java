@@ -76,7 +76,8 @@ public class BoradPipeline implements Pipeline {
 			if (contentType != null) {//类型
 				responeContent.put(BoardPageProcessor.contentType, Integer.parseInt(contentType.get(index)));
 			}
-			responeContent.put(BoardPageProcessor.rankingId, currentDate + "-" + relateType );//YYYYMMHH + (1/2/3)
+			String rankingId = currentDate + "-" + relateType;
+			responeContent.put(BoardPageProcessor.rankingId, rankingId);//YYYYMMHH + (1/2/3)
 
 
 			//入库
@@ -85,6 +86,7 @@ public class BoradPipeline implements Pipeline {
 			vcmLog.setStatus(0);
 			vcmLog.setResponeContext(JSONUtil.toJson(responeContent));
 			vcmLog.setRelateType(relateType);
+			vcmLog.setRankingId(rankingId);
 			recClawerLogMapper.insertRecord(vcmLog);
 		}
 		//recClawerLogMapper.insertRecdBatch(vcmList);
