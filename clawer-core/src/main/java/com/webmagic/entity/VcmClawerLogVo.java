@@ -15,6 +15,7 @@ public class VcmClawerLogVo implements Serializable {
 	private int taskIf;
 	private int relateId;
 	private int relateType;
+	private String rankingId;
 	public String getResponeContext() {
 		return responeContext;
 	}
@@ -74,6 +75,12 @@ public class VcmClawerLogVo implements Serializable {
 	}
 	public void setExecDate(Date execDate) {
 		this.execDate = execDate;
+	}
+	public String getRankingId() {
+		return rankingId;
+	}
+	public void setRankingId(String rankingId) {
+		this.rankingId = rankingId;
 	}
 	
 }
