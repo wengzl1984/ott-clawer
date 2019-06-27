@@ -1,13 +1,13 @@
 server:
-  port: 8088
+  port: 9000
 spring:
   application: paichong
   #datasource config
   druid:
     driverClassName: oracle.jdbc.driver.OracleDriver
-    url: jdbc:oracle:thin:@172.16.16.16:1521:orcl
-    username: vcmuser1
-    password: funo1234
+    url: jdbc:oracle:thin:@127.0.0.0:1521:orcl
+    username: 111
+    password: 111
     MaxActive: 10
     timeBetweenEvictionRunsMillis: 60000
     maxWait: 10000
