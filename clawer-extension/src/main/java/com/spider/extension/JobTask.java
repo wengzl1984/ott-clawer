@@ -22,7 +22,7 @@ public class JobTask {
 
     private static Logger log = Logger.getLogger(JobTask.class);
 
-    @Scheduled(cron = "0 0/2 * * * * ")
+    @Scheduled(cron = "0 0/20 * * * * ")
     public void dealRankDataTask() throws InterruptedException {
         log.info("dealRankDataTask begin:" + new Date());
         //处理榜单信息 begin
@@ -67,7 +67,7 @@ public class JobTask {
         log.info("dealRankDataTask end:" + new Date());
     }
 
-    @Scheduled(cron = "0 1/2 * * * * ")
+    @Scheduled(cron = "0 10/20 * * * * ")
     public void dealClawerDataTask() throws InterruptedException {
         log.info("dealClawerDataTask begin:" + new Date());
         //处理媒资信息 begin
@@ -113,12 +113,19 @@ public class JobTask {
                 }else{
                     if (ifcbSubmit) {
                         cbMap.put("code", ConstConfig.LOG_STATUS_DEAL_SUCESS);
-                        Map<String, Object> sucMap = new HashMap<String, Object>();
-                        sucMap.put("id", dataMap.get("ID").toString());
-                        sucMap.put("cboooStatusType", ConstConfig.LOG_STATUS_DEAL_SUCESS);
-                        cbMap.put("clawer", sucMap);
-                        cbMap.put("logList", new ArrayList<Map<String, Object>>());
+                    }else {
+                        if (dataMap.get("CBOOO_STATUS_TYPE") != null){
+                            cbMap.put("code",dataMap.get("CBOOO_STATUS_TYPE").toString());
+                        }else{
+                            cbMap.put("code",ConstConfig.LOG_STATUS_DEAL_FAIL);
+                        }
                     }
+                    Map<String, Object> sucMap = new HashMap<String, Object>();
+                    sucMap.put("id", dataMap.get("ID").toString());
+                    sucMap.put("cboooStatusType", ConstConfig.LOG_STATUS_DEAL_SUCESS);
+                    cbMap.put("clawer", sucMap);
+                    cbMap.put("logList", new ArrayList<Map<String, Object>>());
+
                 }
 
                 //媒资表状态更新对象
