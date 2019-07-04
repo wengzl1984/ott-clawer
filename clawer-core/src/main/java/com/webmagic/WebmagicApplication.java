@@ -8,10 +8,10 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @SpringBootApplication
 @EnableTransactionManagement(proxyTargetClass = true)
 
-public class WebmagicdemoApplication {
+public class WebmagicApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(WebmagicdemoApplication.class, args);
+        SpringApplication.run(WebmagicApplication.class, args);
     }
 
 }

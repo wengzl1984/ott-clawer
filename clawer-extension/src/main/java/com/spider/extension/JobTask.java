@@ -22,7 +22,7 @@ public class JobTask {
 
     private static Logger log = Logger.getLogger(JobTask.class);
 
-    @Scheduled(cron = "* * 0/2 * * * ")
+    @Scheduled(cron = "0 0/20 * * * * ")
     public void dealRankDataTask() throws InterruptedException {
         log.info("dealRankDataTask begin:" + new Date());
         //处理榜单信息 begin
@@ -67,7 +67,7 @@ public class JobTask {
         log.info("dealRankDataTask end:" + new Date());
     }
 
-    @Scheduled(cron = "* * 1/2 * * * ")
+    @Scheduled(cron = "0 10/20 * * * * ")
     public void dealClawerDataTask() throws InterruptedException {
         log.info("dealClawerDataTask begin:" + new Date());
         //处理媒资信息 begin
@@ -75,11 +75,59 @@ public class JobTask {
         param.put("status",ConstConfig.LOG_STATUS_WAIT_DEAL);
         List<Map<String,Object>> list = clawerService.selVcmClawerVideo(param);
         if (list != null && list.size() > 0){
+            boolean ifdbSubmit = false;//是否要提交豆瓣的信息，当DOUBAN_STATUS_TYPE=1或者2时，不处理豆瓣信息，不更新媒资与日志表信息
+            boolean ifcbSubmit = false;//是否要提交中国网的信息，当CBOOO_STATUS_TYPE=1或者2时，不处理中国网信息，不更新媒资与日志表信息
             for (Map<String,Object> dataMap:list){
-                //处理豆瓣的信息
-                Map<String,Object> dbMap = clawerService.checkDouBanLogData(dataMap);
-                //处理中国网的信息
-                Map<String,Object> cbMap = clawerService.checkCboooLogData(dataMap);
+                ifdbSubmit = false;
+                ifcbSubmit = false;
+                if (dataMap.get("DOUBAN_STATUS_TYPE") != null && dataMap.get("DOUBAN_STATUS_TYPE").toString().equals(ConstConfig.LOG_STATUS_WAIT_DEAL)){
+                    ifdbSubmit = true;
+                }
+                //处理豆瓣的信息.
+                Map<String,Object> dbMap = new HashMap<String,Object>();
+                if (ifdbSubmit){
+                    dbMap = clawerService.checkDouBanLogData(dataMap);
+                }else{
+                    if (dataMap.get("DOUBAN_STATUS_TYPE") != null){
+                        dbMap.put("code",dataMap.get("DOUBAN_STATUS_TYPE").toString());
+                    }else{
+                        dbMap.put("code",ConstConfig.LOG_STATUS_DEAL_FAIL);
+                    }
+                }
+
+                if (dataMap.get("CBOOO_STATUS_TYPE") != null && dataMap.get("CBOOO_STATUS_TYPE").toString().equals(ConstConfig.LOG_STATUS_WAIT_DEAL)){
+                    ifcbSubmit = true;
+                }
+                //处理中国网的信息,CONTENT_TYPE=1情况下才处理中国网信息，不然默认成功
+                Map<String,Object> cbMap = new HashMap<String,Object>();
+                if (dataMap.get("CONTENT_TYPE") != null && dataMap.get("CONTENT_TYPE").toString().equals("1")){
+                    if (ifcbSubmit){
+                        cbMap = clawerService.checkCboooLogData(dataMap);
+                    }else{
+                        if (dataMap.get("CBOOO_STATUS_TYPE") != null){
+                            cbMap.put("code",dataMap.get("CBOOO_STATUS_TYPE").toString());
+                        }else{
+                            cbMap.put("code",ConstConfig.LOG_STATUS_DEAL_FAIL);
+                        }
+                    }
+                }else{
+                    if (ifcbSubmit) {
+                        cbMap.put("code", ConstConfig.LOG_STATUS_DEAL_SUCESS);
+                    }else {
+                        if (dataMap.get("CBOOO_STATUS_TYPE") != null){
+                            cbMap.put("code",dataMap.get("CBOOO_STATUS_TYPE").toString());
+                        }else{
+                            cbMap.put("code",ConstConfig.LOG_STATUS_DEAL_FAIL);
+                        }
+                    }
+                    Map<String, Object> sucMap = new HashMap<String, Object>();
+                    sucMap.put("id", dataMap.get("ID").toString());
+                    sucMap.put("cboooStatusType", ConstConfig.LOG_STATUS_DEAL_SUCESS);
+                    cbMap.put("clawer", sucMap);
+                    cbMap.put("logList", new ArrayList<Map<String, Object>>());
+
+                }
+
                 //媒资表状态更新对象
                 Map<String,Object> clawerStatusMap = new HashMap<String,Object>();
                 String dbCode = dbMap.get("code").toString();
@@ -87,14 +135,19 @@ public class JobTask {
                 clawerStatusMap.put("id",dataMap.get("ID").toString());
                 //状态为成功或者失败时，才更新数据
                 if (dbCode.equals(ConstConfig.LOG_STATUS_DEAL_SUCESS) || dbCode.equals(ConstConfig.LOG_STATUS_DEAL_FAIL)){
-                    Map<String,Object> clawerMap = (Map<String,Object>)dbMap.get("clawer");
-                    List<Map<String,Object>> logList = (List<Map<String,Object>>)dbMap.get("logList");
-                    clawerService.updateClawerInfoAndLog(clawerMap,logList);
+                    if (ifdbSubmit){
+                        Map<String,Object> clawerMap = (Map<String,Object>)dbMap.get("clawer");
+                        List<Map<String,Object>> logList = (List<Map<String,Object>>)dbMap.get("logList");
+                        clawerService.updateClawerInfoAndLog(clawerMap,logList);
+                    }
+
                 }
                 if (cbCode.equals(ConstConfig.LOG_STATUS_DEAL_SUCESS) || cbCode.equals(ConstConfig.LOG_STATUS_DEAL_FAIL)){
-                    Map<String,Object> clawerMap = (Map<String,Object>)cbMap.get("clawer");
-                    List<Map<String,Object>> logList = (List<Map<String,Object>>)cbMap.get("logList");
-                    clawerService.updateClawerInfoAndLog(clawerMap,logList);
+                    if (ifcbSubmit){
+                        Map<String,Object> clawerMap = (Map<String,Object>)cbMap.get("clawer");
+                        List<Map<String,Object>> logList = (List<Map<String,Object>>)cbMap.get("logList");
+                        clawerService.updateClawerInfoAndLog(clawerMap,logList);
+                    }
                 }
                 //根据豆瓣和中国网的状态，更新媒资表的状态
                 //任意一个失败视为失败
