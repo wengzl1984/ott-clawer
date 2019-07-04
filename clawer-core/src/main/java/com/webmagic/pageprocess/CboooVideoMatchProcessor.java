@@ -36,11 +36,11 @@ public class CboooVideoMatchProcessor implements PageProcessor {
     private SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private String searchVideoName = null;//要查询的媒资名称
     private Map<String, String> ruleMap = new HashMap<String, String>();//规则map
-    private WebDriver driver = null;
+   // private WebDriver driver = null;
     private Site site;
-    ;
-    @Value("${phantomjs.maxPageNum}")
-    private int maxPageNum;
+
+   // @Value("${phantomjs.maxPageNum}")
+   // private int maxPageNum;
     private String relateType = null;
 
     public CboooVideoMatchProcessor() {
@@ -82,16 +82,17 @@ public class CboooVideoMatchProcessor implements PageProcessor {
                 log.error("CboooPageProcessor UnsupportedEncodingException ", e);
             }
             log.info("searchVideoName=" + searchVideoName);
-            if (driver == null) {
-                driver = phantomJsDriver.getPhantomJSDriver();
-            }
-            driver.get(page.getRequest().getUrl());
+//            if (driver == null) {
+//                driver = phantomJsDriver.getPhantomJSDriver();
+//            }
+//            driver.get(page.getRequest().getUrl());
             try {
-                WebElement webElement = driver.findElement(By.id("top"));
-                String str = webElement.getAttribute("outerHTML");
-                str = str.replaceAll("&nbsp;", "");
+//                WebElement webElement = driver.findElement(By.id("top"));
+//                String str = webElement.getAttribute("outerHTML");
+//                str = str.replaceAll("&nbsp;", "");
                 // System.out.println("str=" + str);
-                Html html = new Html(str);
+//                Html html = new Html(str);
+                Html html = page.getHtml();
                 List<String> descInfo = html.xpath("//*[@id=\"top\"]/div[3]/div[2]/div[2]/ul[1]/*/span/text()").all();
                 List<String> link = html.xpath("//*[@id=\"top\"]/div[3]/div[2]/div[2]/ul[1]/*/a/@href").all();
                 log.info("link=" + link);
@@ -109,13 +110,13 @@ public class CboooVideoMatchProcessor implements PageProcessor {
                     log.info("searchVideoName=" + searchVideoName + ",can not find");
                     cboooPageException(page, null);
                 }
-                log.info("currentPageNum=" + ruleMap.get("CURRENT_PAGE_NUM") + ",maxPageNum=" + maxPageNum);
-                if ((Integer.valueOf(ruleMap.get("CURRENT_PAGE_NUM"))) % maxPageNum == 0) {
-                    log.info("cbooo close phantomjs ");
-                    driver.close();//关闭
-                    driver.quit();//退出
-                    driver = null;
-                }
+//                log.info("currentPageNum=" + ruleMap.get("CURRENT_PAGE_NUM") + ",maxPageNum=" + maxPageNum);
+//                if ((Integer.valueOf(ruleMap.get("CURRENT_PAGE_NUM"))) % maxPageNum == 0) {
+//                    log.info("cbooo close phantomjs ");
+//                    driver.close();//关闭
+//                    driver.quit();//退出
+//                    driver = null;
+//                }
             } catch (Exception e) {
                 cboooPageException(page, e);
 
