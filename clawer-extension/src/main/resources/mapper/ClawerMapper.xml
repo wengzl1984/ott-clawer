@@ -7,6 +7,7 @@
             a.video_name,
             a.series_id,
             a.status,
+            a.CONTENT_TYPE,
             a.douban_status_type,
             a.cbooo_status_type
         from VCM_Clawer_VIDEO_INFO a
