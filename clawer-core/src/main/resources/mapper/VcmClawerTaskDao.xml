@@ -17,5 +17,29 @@
 
     </select>
 
+	<update id="updateTaskInfo" parameterType="Map">
+		update vcm_clawer_task tt
+		<set>
+
+			<if test="frequencyNum  != NULL">
+				tt.frequency_num=#{frequencyNum
+                ,jdbcType=NUMERIC},
+			</if>
+			<if test="reptileDate  != NULL">
+				tt.reptile_date=#{reptileDate
+                ,jdbcType=VARCHAR},
+			</if>
+			<if test="status  != NULL">
+				tt.status=#{status
+                ,jdbcType=NUMERIC},
+			</if>
+			<if test="updateUser  != NULL">
+				tt.update_user=#{updateUser
+                ,jdbcType=VARCHAR},
+			</if>
+			tt.update_date=sysdate
+		</set>
+		WHERE tt.id=#{taskId, jdbcType=NUMERIC}
+	</update>
 
 </mapper>
