@@ -34,6 +34,7 @@ public class BoardPageProcessor implements PageProcessor {
 	public static final String videoRate = "videoRate";//评分/指数
 	public static final String videoReleaseDates = "videoReleaseDates";//上映时间
 	public static final String videoCast = "videoCast";//主演
+	public static final String rankingId = "rankingId";//榜单id --批次号
 	
 	public static final int  MAOYAN_ID = 3;
 	public static final int  BAIDU_TV_ID = 2;
@@ -156,7 +157,7 @@ public class BoardPageProcessor implements PageProcessor {
 			
 		} else {
 
-			log.info("中国票房网，url=" + page.getUrl() + ",a=" + data.size());
+			log.info("中国票房网，url=" + page.getUrl() );
 			List<String> pf =page.getHtml().xpath(getXpath(videoBoxOffice)).all();
 			pf.stream().forEach((String info) -> {
 				if (info.indexOf(DateUtil.getCurrYear()) != -1 && info.indexOf("万") != -1) {

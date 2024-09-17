@@ -5,9 +5,9 @@ spring:
   #datasource config
   druid:
     driverClassName: oracle.jdbc.driver.OracleDriver
-    url: jdbc:oracle:thin:@127.0.0.0:1521:orcl
-    username: 111
-    password: 111
+    url: jdbc:oracle:thin:@127.0.0.1:1521:orcl
+    username: *
+    password: *
     MaxActive: 10
     timeBetweenEvictionRunsMillis: 60000
     maxWait: 10000
